@@ -1,0 +1,75 @@
+Client Web
+	0+ istanze
+	interfaccia
+	acquisto di un nuovo dominio
+	comunica con il Server Web tramite API REST
+	
+	- controllare se un dominio è disponibile
+		se non disponibile (nome, cognome, email) utente e (data scadenza)
+	- registrare un dominio, se disponibile
+		tramite acquisto
+		registrazione (dominio, durata (minimo 1, massimo 10))
+		acquisto (nome, cognome, email, numero carta, scadenza carta, CVV carta, nome e cognome carta)
+	- elenco dei domini registrati (dominio, registrazione, scadenza)
+		anche domini scaduti e non rinnovati, perciò tutti i domini registrati
+	- elenco degli ordini (dominio, data ordine, oggetto (registrazione o rinnovo), quota pagata)
+	- rinnovare un dominio
+		come registrazione, ma riferito ad un dominio già registrato all'utente
+		fino a dieci anni totali (se scade tra 3 anni, rinnovare al massimo altri 7 anni)
+	- registrare un nuovo utente (nome, cognome, email)
+	
+	utenti non autenticati, ma tenere traccia in fase di acquisto del dominio e gestione
+	con codice identificativo univoco (esempio, email o ID generato) per distinguere le richieste
+	----------------------------------------------------------------------
+	JavaScript e HTML
+
+Server Web
+	1 istanza
+	logica di gestione dei domini e loro acquisto
+	comunica con il Client Web tramite API REST
+	comunica con il Database tramite socket TCP
+	
+	- gestione dei domini, acquisto, rinnovo, controllo della disponibilità
+	- gestione acquisti e ordini
+	- accesso condiviso alle risorse (es. acquisto di uno stesso dominio)
+	- ovviamente, utilizza il database per ottenere o salvare i dati
+	----------------------------------------------------------------------
+	Java, Jakarta RESTful Web Services e Jakarta JSON Binding
+
+Database
+	1 istanza
+	gestisce dati degli acquisti e dei domini acquistati
+	comunica con il Server Web tramite socket TCP
+	
+	- documenti salvati in memoria principale (RAM) o secondaria (file su disco 
+		liberamente strutturato)
+	- domini, utenti ed ordini preesistenti, leggendo un file dalla memoria 
+		secondaria all'avvio del database
+	- più connessioni dal Server, gestendo la concorrenza per i documenti
+	
+	Un documento è una informazione completa a sè stante (es. ricevuta o utente
+		con i suoi dati), racchiusa eventualmente in una collezione (es. collezione
+		di ricevute che comprende un documento per ogni ricevuta), identificato tramite
+		una chiave (es. ID o percorso).
+	Codificato in un formato noto, quale XML o JSON.
+	Comandi per manipolare il documento, per interrogare un singolo documento
+		o tutti i documenti di una collezione.
+	- creare ed eliminare singoli documenti organizzati in collezioni
+	- almeno un comando per interrogare il contenuto dei documenti di una collezione
+		(es. se i documenti sono JSON tutti i documenti che hanno un campo
+		booleano true, una sorta di query SQL con il WHERE)
+	- libero dove salvare e libero il formato
+	----------------------------------------------------------------------
+	Java
+
+API REST tra Client e Server
+	Documentata in maniera simile allo scheletro fornito
+	Laboratorio 6 e Argomento 5
+
+socket TCP tra Server e Database
+	Insieme limitato di comandi e trasmettere i dati in forma testuale
+	Generico, non specifico per i Domini Internet
+	Porta conosciuta, 80/8080 per HTTP sia dal Server sia dal Database
+	Documentato in maniera simile allo scheletro fornito
+		(struttura richiesta, struttura risposta, comandi del database , come formare i documenti)
+	Laboratorio 1 e 2 e Argomento 2

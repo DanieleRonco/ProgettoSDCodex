@@ -73,3 +73,27 @@ socket TCP tra Server e Database
 	Documentato in maniera simile allo scheletro fornito
 		(struttura richiesta, struttura risposta, comandi del database , come formare i documenti)
 	Laboratorio 1 e 2 e Argomento 2
+	
+
+per ogni documento un _id univoco
+
+GET
+utenti
+OR:["email":"pippo","nome":"ronco franco"],"cognome":"ronco","eta":18
+
+operazioni:
+: -> ==
+!: -> !=
+>: -> >
+>=: -> >=
+
+keywords:
+false, true, null, date, OR
+
+{"chiave":"valore", "chiave":123, "chiave": false|true, "chiave":null, "chiave"!:null, "chiave":date("10-20-23"), OR:["chiave":"valore", ...]}
+
+
+update
+collection
+{query}
+{"chiave":"nuovo valore", "chiave2":"nuovo valore"}

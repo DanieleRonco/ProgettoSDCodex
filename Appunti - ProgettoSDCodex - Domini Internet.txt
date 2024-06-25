@@ -4,19 +4,19 @@ Client Web
 	acquisto di un nuovo dominio
 	comunica con il Server Web tramite API REST
 	
-	- controllare se un dominio è disponibile
+	[ ] controllare se un dominio è disponibile
 		se non disponibile (nome, cognome, email) utente e (data scadenza)
-	- registrare un dominio, se disponibile
+	[ ] registrare un dominio, se disponibile
 		tramite acquisto
 		registrazione (dominio, durata (minimo 1, massimo 10))
 		acquisto (nome, cognome, email, numero carta, scadenza carta, CVV carta, nome e cognome carta)
-	- elenco dei domini registrati (dominio, registrazione, scadenza)
+	[ ] elenco dei domini registrati (dominio, registrazione, scadenza)
 		anche domini scaduti e non rinnovati, perciò tutti i domini registrati
-	- elenco degli ordini (dominio, data ordine, oggetto (registrazione o rinnovo), quota pagata)
-	- rinnovare un dominio
+	[ ] elenco degli ordini (dominio, data ordine, oggetto (registrazione o rinnovo), quota pagata)
+	[ ] rinnovare un dominio
 		come registrazione, ma riferito ad un dominio già registrato all'utente
 		fino a dieci anni totali (se scade tra 3 anni, rinnovare al massimo altri 7 anni)
-	- registrare un nuovo utente (nome, cognome, email)
+	[ ] registrare un nuovo utente (nome, cognome, email)
 	
 	utenti non autenticati, ma tenere traccia in fase di acquisto del dominio e gestione
 	con codice identificativo univoco (esempio, email o ID generato) per distinguere le richieste
@@ -81,6 +81,8 @@ GET
 utenti
 OR:["email":"pippo","nome":"ronco franco"],"cognome":"ronco","eta":18
 
+
+
 operazioni:
 : -> ==
 !: -> !=
@@ -97,3 +99,24 @@ update
 collection
 {query}
 {"chiave":"nuovo valore", "chiave2":"nuovo valore"}
+
+
+login
+	utente invia server credenziali email pass
+	server controlla database se esiste documento con quelle credenziali
+	se non esiste ritorna 401
+	se esiste genera un token (stringa randomica) UUID, genero l'hash sha util qualcosa, e lo salvo sul database all'intenro dell'utente update 
+		in base a ID 
+	collection tokens con chiave token e id id utente, 
+
+email non presente aggiungo utente create 
+se c'è 400
+
+200 ok 
+201 creato
+204 vuota
+400 bad request
+401 non uatorizzato
+404 non trovato
+409 conflitto
+500 internal server error

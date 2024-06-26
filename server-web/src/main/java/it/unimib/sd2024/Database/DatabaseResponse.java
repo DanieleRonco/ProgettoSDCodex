@@ -31,17 +31,17 @@ public class DatabaseResponse {
     }
 
     public String getErrorMessage() {
-        return responseInfo.getErrorMessage();
+        return responseInfo.getMessage();
     }
 
     public boolean isErrorResponse() {
-        return responseInfo.isErrorResponse();
+        return responseInfo.isError();
     }
 }
 
 class DatabaseResponseInfo {
-    private boolean isErrorResponse;
-    private String errorMessage;
+    private boolean isError;
+    private String message;
     private int affectedDocumentsCount;
     private int detectedDocumentsCount;
     private String[] retrievedDocuments;
@@ -61,11 +61,11 @@ class DatabaseResponseInfo {
         return affectedDocumentsCount;
     }
 
-    public String getErrorMessage() {
-        return errorMessage;
+    public String getMessage() {
+        return message;
     }
 
-    public boolean isErrorResponse() {
-        return isErrorResponse;
+    public boolean isError() {
+        return isError;
     }
 }

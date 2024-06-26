@@ -3,42 +3,30 @@ package it.unimib.sd2024.QueryBuilder;
 import jakarta.json.bind.JsonbBuilder;
 
 public class Query {
-    private String query;
     private String version = "1.0";
-    private queryOperation operation;
     private String collectionName;
+    private QueryOperationType operation;
 
-    public Query() {
-    }
-
-    public Query(queryOperation operation) {
+    public Query(QueryOperationType operation) {
         this.setOperation(operation);
     }
 
-    public Query(queryOperation operation, String collectionName, String query) throws InvalidCollectionNameException {
-        this.version = version;
-        this.setOperation(operation);
-        this.setCollectionName(collectionName);
-        this.query = query;
+    public Query(QueryOperationType operation, String collectionName, String query) throws InvalidCollectionNameException {
+//        this.version = version;
+//        this.setOperation(operation);
+//        this.setCollection(collectionName);
+//        this.query = query;
     }
 
     public String getCollectionName() {
         return collectionName;
     }
 
-    public Query setCollectionName(String collectionName) {
-        if (!isValidCollectionName(collectionName)) {
-            throw new InvalidCollectionNameException("Invalid collection name");
-        }
-        this.collectionName = collectionName;
-        return this;
-    }
-
-    public queryOperation getOperation() {
+    public QueryOperationType getOperation() {
         return operation;
     }
 
-    public Query setOperation(queryOperation operation) throws IllegalArgumentException {
+    public Query setOperation(QueryOperationType operation) throws IllegalArgumentException {
         this.operation = operation;
         return this;
     }
@@ -47,11 +35,8 @@ public class Query {
         return version;
     }
 
-    private boolean isValidCollectionName(String collectionName) {
-        // could be a more sophisticated check
-        return !collectionName.isEmpty() &&
-                collectionName.length() < 100 &&
-                !collectionName.contains("\n");
+    public void setVersion(String Version){
+        this.version = Version;
     }
 
     public String build() {

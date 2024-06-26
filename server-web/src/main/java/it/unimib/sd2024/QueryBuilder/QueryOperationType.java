@@ -1,6 +1,6 @@
 package it.unimib.sd2024.QueryBuilder;
 
-public enum queryOperation {
+public enum QueryOperationType {
     PING,
     CREATE,
     DROP,

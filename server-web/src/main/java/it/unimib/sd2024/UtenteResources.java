@@ -29,7 +29,7 @@ import jakarta.ws.rs.core.Response.Status;
 import java.util.UUID;
 
 /**
- * Rappresenta la risorsa "example" in "http://localhost:8080/users".
+ * Rappresenta la risorsa "users" in "http://localhost:8080/users".
 */
 @Path("users")
 public class UtenteResources {
@@ -46,7 +46,7 @@ public class UtenteResources {
     }
 
     /**
-     * Implementazione di GET "/example/register".
+     * Implementazione di POST "/users/register".
      * @throws IOException 
      * @throws InterruptedException 
     */
@@ -77,6 +77,9 @@ public class UtenteResources {
         }
     }
 
+    /**
+     * Implementazione di POST "/users/login".
+    */
     @Path("/login")
     @POST
     @Consumes(MediaType.APPLICATION_JSON)

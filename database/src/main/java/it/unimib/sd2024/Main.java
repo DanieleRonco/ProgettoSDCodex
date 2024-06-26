@@ -1,28 +1,23 @@
 package it.unimib.sd2024;
 
-import java.net.*;
-import java.io.*;
+import it.unimib.sd2024.Logger.LogLevelType;
+import it.unimib.sd2024.Logger.Logger;
+import it.unimib.sd2024.Server.Server;
 
-/**
- * Classe principale in cui parte il database.
- */
+import java.io.IOException;
+import java.net.ServerSocket;
+
 public class Main {
-    /**
-     * Porta di ascolto.
-     */
     public static final int PORT = 3030;
 
-    /**
-     * Avvia il database e l'ascolto di nuove connessioni.
-     */
-    public static void startServer() throws IOException {
+    public static void startServer(Logger log) throws IOException {
         var server = new ServerSocket(PORT);
 
-        System.out.println("Database listening at localhost:" + PORT);
+        log.Info("Database listening at localhost:" + PORT);
 
         try {
             while (true)
-                new Handler(server.accept()).start();
+                new Handler(server.accept(), log).start();
         } catch (IOException e) {
             System.err.println(e);
         } finally {
@@ -31,48 +26,81 @@ public class Main {
     }
 
     /**
-     * Handler di una connessione del client.
-     */
-    private static class Handler extends Thread {
-        private Socket client;
-
-        public Handler(Socket client) {
-            this.client = client;
-        }
-
-        public void run() {
-            try {
-                var out = new PrintWriter(client.getOutputStream(), true);
-                var in = new BufferedReader(new InputStreamReader(client.getInputStream()));
-
-                String inputLine;
-
-                while ((inputLine = in.readLine()) != null) {
-                    if (".".equals(inputLine)) {
-                        out.println("bye");
-                        break;
-                    }
-                    out.println(inputLine);
-                }
-
-                in.close();
-                out.close();
-                client.close();
-            } catch (IOException e) {
-                System.err.println(e);
-            }
-        }
-    }
-
-    /**
      * Metodo principale di avvio del database.
      *
      * @param args argomenti passati a riga di comando.
-     *
      * @throws IOException
      */
     public static void main(String[] args) throws IOException {
-        startServer();
-    }
-}
+        LogLevelType logLevel = LogLevelType.INFO;
+        int port = PORT;
+        for (String arg : args) {
+            switch (arg) {
+                case "--help", "-h":
+                    System.out.println("Usage: java -jar database.jar [--port=PORT] [--log-level=LEVEL]");
+                    System.out.println("PORT: port number to listen on, default is 3030");
+                    System.out.println("LEVEL: log level, default is INFO");
+                    System.exit(0);
+                    break;
+                case "--port", "-p":
+                    System.out.println("Port must be specified");
+                    System.exit(1);
+                    break;
+                case "--log-level", "-ll":
+                    System.out.println("Log level must be specified");
+                    System.exit(1);
+                    break;
+            }
+            if (arg.startsWith("--port=") || arg.startsWith("-p=")) {
+                arg = arg.substring(7);
+                try {
+                    port = Integer.parseInt(arg);
+                } catch (NumberFormatException e) {
+                    System.out.println("Port must be a number");
+                    System.exit(1);
+                }
+            } else if (arg.startsWith("--log-level=") || arg.startsWith("-ll=")) {
+                arg = arg.substring(12);
+                switch (arg.toUpperCase()) {
+                    case "DEBUG":
+                        System.out.println("Log level set to DEBUG");
+                        logLevel = LogLevelType.DEBUG;
+                        break;
+                    case "INFO":
+                        System.out.println("Log level set to INFO");
+                        logLevel = LogLevelType.INFO;
+                        break;
+                    case "WARNING":
+                        System.out.println("Log level set to WARNING");
+                        logLevel = LogLevelType.WARNING;
+                        break;
+                    case "ERROR":
+                        System.out.println("Log level set to ERROR");
+                        logLevel = LogLevelType.ERROR;
+                        break;
+                    default:
+                        System.out.println("Log level not recognized, only supported levels are DEBUG, INFO, WARNING, ERROR");
+                        System.exit(1);
+                }
+            }
+        }
 
+        Logger log = new Logger(logLevel);
+        Server server = new Server(port, log);
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            @Override
+            public void run() {
+                log.Info("Server is shutting down");
+                server.stop();
+            }
+        });
+
+        try {
+            server.start();
+        } catch (Exception e) {
+            log.Error("Error starting db: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+}

@@ -10,11 +10,11 @@ public class Carta {
 
     // costruttori
     public Carta(String numero, String scadenza, String cvv, String nome, String cognome){
-        this.numero = numero;
-        this.scadenza = scadenza;
-        this.cvv = cvv;
-        this.nome = nome;
-        this.cognome = cognome;
+        setNumero(numero);
+        setScadenza(scadenza);
+        setCVV(cvv);
+        setNome(nome);
+        setCognome(cognome);
     }
 
     // getter

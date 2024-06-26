@@ -8,9 +8,9 @@ public class Dominio {
 
     // costruttori
     public Dominio(String nome, String tld, String expirationDate){
-        this.nome = nome;
-        this.tld = tld;
-        this.expirationDate = expirationDate;
+        setNome(nome);
+        setTLD(tld);
+        setExpirationDate(expirationDate);
     }
 
     // getter

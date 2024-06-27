@@ -20,10 +20,13 @@ public class StorageManager {
         return pathToStorageDir;
     }
 
-    private boolean isValidCollectionName(String collectionName)
+    private boolean isValidCollectionName(String collectionName){
+        return !collectionName.isEmpty() &&
+                collectionName.length() < 100 &&
+                !collectionName.contains("\n");
+    }
 
     public void createNewCollectionStorage(String collectionName) throws IOException {
-
         Files.createFile(Paths.get(pathToStorageDir.toString(), collectionName + ".json"));
     }
 }

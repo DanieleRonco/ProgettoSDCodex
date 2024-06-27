@@ -9,39 +9,12 @@ import java.io.PrintWriter;
 import java.net.Socket;
 
 public class Controller {
+    private Logger log;
+    public Controller(Logger log) {
+        this.log = log;
+    }
 
-
-    private static class Handler extends Thread {
-        private Socket client;
-        private Logger log;
-
-        public Handler(Socket client, Logger log) {
-            this.log = log;
-            this.client = client;
-        }
-
-        public void run() {
-            log.Debug("Connected to " + client.getRemoteSocketAddress());
-            try {
-                var out = new PrintWriter(client.getOutputStream(), true);
-                var in = new BufferedReader(new InputStreamReader(client.getInputStream()));
-
-                String inputLine;
-
-                while ((inputLine = in.readLine()) != null) {
-                    if (".".equals(inputLine)) {
-                        out.println("bye");
-                        break;
-                    }
-                    out.println(inputLine);
-                }
-
-                in.close();
-                out.close();
-                client.close();
-            } catch (IOException e) {
-                System.err.println(e);
-            }
-        }
+    public String handleRequest(String request) {
+        return "Hello, World!";
     }
 }

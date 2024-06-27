@@ -1,29 +1,15 @@
 package it.unimib.sd2024;
 
+import it.unimib.sd2024.Controller.Controller;
 import it.unimib.sd2024.Logger.LogLevelType;
 import it.unimib.sd2024.Logger.Logger;
 import it.unimib.sd2024.Server.Server;
 
 import java.io.IOException;
-import java.net.ServerSocket;
 
 public class Main {
-    public static final int PORT = 3030;
-
-    public static void startServer(Logger log) throws IOException {
-        var server = new ServerSocket(PORT);
-
-        log.Info("Database listening at localhost:" + PORT);
-
-        try {
-            while (true)
-                new Handler(server.accept(), log).start();
-        } catch (IOException e) {
-            System.err.println(e);
-        } finally {
-            server.close();
-        }
-    }
+    public static final int DEFAULT_PORT = 3030;
+    public static final LogLevelType DEFAULT_LOG_LEVEL = LogLevelType.INFO;
 
     /**
      * Metodo principale di avvio del database.
@@ -32,8 +18,8 @@ public class Main {
      * @throws IOException
      */
     public static void main(String[] args) throws IOException {
-        LogLevelType logLevel = LogLevelType.INFO;
-        int port = PORT;
+        LogLevelType logLevel = DEFAULT_LOG_LEVEL;
+        int port = DEFAULT_PORT;
         for (String arg : args) {
             switch (arg) {
                 case "--help", "-h":
@@ -86,7 +72,8 @@ public class Main {
         }
 
         Logger log = new Logger(logLevel);
-        Server server = new Server(port, log);
+        Controller controller = new Controller(log);
+        Server server = new Server(port, log,controller);
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {

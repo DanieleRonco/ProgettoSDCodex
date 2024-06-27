@@ -1,0 +1,83 @@
+package it.unimib.sd2024.Resources;
+
+import java.io.IOException;
+
+import it.unimib.sd2024.Database.Database;
+import it.unimib.sd2024.Database.DatabaseResponse;
+import it.unimib.sd2024.QueryBuilder.QueryBuilder;
+import it.unimib.sd2024.QueryBuilder.V1.Filter;
+import it.unimib.sd2024.Models.*;
+import it.unimib.sd2024.Utils.Autenticazione;
+import jakarta.json.bind.Jsonb;
+import jakarta.json.bind.JsonbBuilder;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HeaderParam;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
+/**
+ * Rappresenta la risorsa "order" in "http://localhost:8080/order".
+ */
+@Path("order")
+public class OrdineResources {
+    // Attributi privati statici...
+    private static Database comunicazioneDatabase;
+    private static Jsonb jsonb;
+
+    // Inizializzazione statica.
+    static {
+        try {
+            Database comunicazioneDatabase = new Database();
+            jsonb = JsonbBuilder.create();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Implementazione di GET "/order/myOrders"
+     * @throws IOException 
+     * @throws InterruptedException 
+     */
+    @Path("/myOrders")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getMyOrdersList(@HeaderParam("Bearer") String token) throws InterruptedException, IOException {
+        // ottenere l'elenco degli ordini dell'utente
+        // 0. si verifica l'autenticazione
+        // 1. si ottiene l'email dell'utente, dato il token
+        //  1.1 nessun errore
+        //    1.1.1 si ottiene la lista di ordini in base all'email
+        //      1.1.1.1 nessun errore
+        //      1.1.1.2 errore
+        //  1.2 errore
+
+        // verifica autenticazione
+        if(Autenticazione.checkAuthentication(token)){
+            // autenticato
+            // si ottiene l'email dell'utente, dato il token
+            DatabaseResponse rispostaEmail = comunicazioneDatabase.ExecuteQuery(QueryBuilder.V1().FIND().setCollection("tokens").filter(new Filter().add("token", token)));
+            if(!rispostaEmail.isErrorResponse()){
+                // nessun errore
+                UtenteEmailEToken emailEToken = jsonb.fromJson(rispostaEmail.getRetrievedDocuments()[0], UtenteEmailEToken.class);
+                DatabaseResponse rispostaOrdini = comunicazioneDatabase.ExecuteQuery(QueryBuilder.V1().FIND().setCollection("orders").filter(new Filter().add("email", emailEToken.getUserEmail())));
+                if(!rispostaOrdini.isErrorResponse()){
+                    // nessun errore
+                    // TODO: verificare cosa ritorna
+                    return Response.status(200).entity(rispostaOrdini.getRetrievedDocuments()).build();
+                } else {
+                    // errore
+                    return Response.status(500).build();
+                }
+            } else {
+                // errore
+                return Response.status(500).build();
+            }
+        } else {
+            // non autenticato
+            return Response.status(401).build();
+        }
+    }
+}

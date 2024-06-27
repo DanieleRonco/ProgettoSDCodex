@@ -9,7 +9,7 @@ import java.util.Map;
 import it.unimib.sd2024.Database.Database;
 import it.unimib.sd2024.Database.DatabaseResponse;
 import it.unimib.sd2024.QueryBuilder.Query;
-import it.unimib.sd2024.QueryBuilder.queryOperation;
+import it.unimib.sd2024.QueryBuilder.QueryOperationType;
 import jakarta.json.JsonException;
 import jakarta.json.bind.JsonbBuilder;
 import jakarta.json.bind.JsonbException;
@@ -60,12 +60,12 @@ public class UtenteResources {
         String password = utente.getPassword();
 
         // si verifica se l'utente è già registrato (= email già presente)
-        Query richiesta = new Query(queryOperation.FIND, "users", "{\"email\":\"" + email + "\"}");
+        Query richiesta = new Query(QueryOperationType.FIND, "users", "{\"email\":\"" + email + "\"}");
         DatabaseResponse risposta = comunicazioneDatabase.ExecuteQuery(richiesta);
 
         if(risposta.getDetectedDocumentsCount() == 0){
             // email non presente
-            Query inserimento = new Query(queryOperation.INSERT, "users", "{\"nome\":\"" + nome + "\", \"cognome\":\"" + cognome + "\", \"email\":\"" + email + "\", \"password\":\"" + password + "\"}");
+            Query inserimento = new Query(QueryOperationType.INSERT, "users", "{\"nome\":\"" + nome + "\", \"cognome\":\"" + cognome + "\", \"email\":\"" + email + "\", \"password\":\"" + password + "\"}");
             risposta = comunicazioneDatabase.ExecuteQuery(inserimento);
             if((!risposta.isErrorResponse()) && (risposta.getAffectedDocumentsCount() == 1))
                 return Response.status(201).build();
@@ -88,11 +88,11 @@ public class UtenteResources {
         String password = utente.getPassword();
 
         // si verifica se le credenziali sono corrette (email esistente e password corretta)
-        Query richiesta1 = new Query(queryOperation.FIND, "users", "{\"email\":\"" + email + "\"}");
+        Query richiesta1 = new Query(QueryOperationType.FIND, "users", "{\"email\":\"" + email + "\"}");
         DatabaseResponse risposta1 = comunicazioneDatabase.ExecuteQuery(richiesta1);
         if(risposta1.getDetectedDocumentsCount() == 1){
             // email presente
-            Query richiesta2 = new Query(queryOperation.FIND, "users", "{\"email\":\"" + email + "\", \"password\":\"" + password + "\"}");
+            Query richiesta2 = new Query(QueryOperationType.FIND, "users", "{\"email\":\"" + email + "\", \"password\":\"" + password + "\"}");
             DatabaseResponse risposta2 = comunicazioneDatabase.ExecuteQuery(richiesta2);
             if(risposta1.getDetectedDocumentsCount() == 1){
                 // password corretta

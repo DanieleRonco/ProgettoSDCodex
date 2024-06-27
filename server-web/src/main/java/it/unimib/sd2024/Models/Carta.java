@@ -1,4 +1,4 @@
-package it.unimib.sd2024;
+package it.unimib.sd2024.Models;
 
 public class Carta {
     // attributi privati

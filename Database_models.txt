@@ -1,0 +1,29 @@
+users
+	nome
+	cognome
+	email
+	password
+
+tokens
+	email
+	token
+
+domains
+	nome
+	TLD
+	status - (active, expired, acquiring)
+
+orders
+	nome - dominio
+	TLD  - dominio
+	email - utente
+	date
+	object (registrazione o rinnovo)
+	ammount
+
+registered
+	nome - dominio
+	TLD  - dominio
+	email - utente
+	registrationDate
+	expirationDate

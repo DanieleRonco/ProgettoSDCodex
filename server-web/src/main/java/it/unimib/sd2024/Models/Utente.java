@@ -1,16 +1,14 @@
-package it.unimib.sd2024;
+package it.unimib.sd2024.Models;
 
 public class Utente {
     // attributi privati
-    private String ID;
     private String nome;
     private String cognome;
     private String email;
     private String password;
 
     // costruttori
-    public Utente(String ID, String nome, String cognome, String email, String password){
-        setID(ID);
+    public Utente(String nome, String cognome, String email, String password){
         setNome(nome);
         setCognome(cognome);
         setEmail(email);
@@ -18,9 +16,6 @@ public class Utente {
     }
 
     // getter
-    public String getID(){
-        return this.ID;
-    }
     public String getNome(){
         return this.nome;
     }
@@ -35,9 +30,6 @@ public class Utente {
     }
 
     // setter
-    public void setID(String ID){
-        this.ID = ID;
-    }
     public void setNome(String nome){
         this.nome = nome;
     }

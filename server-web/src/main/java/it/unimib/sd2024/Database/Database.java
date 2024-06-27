@@ -1,7 +1,5 @@
 package it.unimib.sd2024.Database;
 
-import it.unimib.sd2024.QueryBuilder.Query;
-
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;

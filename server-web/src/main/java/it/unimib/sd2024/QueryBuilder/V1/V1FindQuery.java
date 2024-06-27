@@ -1,8 +1,8 @@
-package it.unimib.sd2024.QueryBuilder;
+package it.unimib.sd2024.QueryBuilder.V1;
 
 public class V1FindQuery extends V1FilterableQuery {
     public V1FindQuery(){
-        super(QueryOperationType.FIND);
+        super(V1QueryOperationType.FIND);
     }
 
     public V1FindQuery(String collection){
@@ -15,5 +15,8 @@ public class V1FindQuery extends V1FilterableQuery {
         return this;
     }
 
-
+    public V1FindQuery filter(Filter filter) {
+        super.filter(filter);
+        return this;
+    }
 }

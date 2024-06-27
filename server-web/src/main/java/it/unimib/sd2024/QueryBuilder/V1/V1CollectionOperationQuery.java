@@ -1,9 +1,9 @@
-package it.unimib.sd2024.QueryBuilder;
+package it.unimib.sd2024.QueryBuilder.V1;
 
 public class V1CollectionOperationQuery extends V1Query {
     private String collection;
 
-    public V1CollectionOperationQuery(QueryOperationType operation) {
+    public V1CollectionOperationQuery(V1QueryOperationType operation) {
         super(operation);
     }
 
@@ -18,7 +18,7 @@ public class V1CollectionOperationQuery extends V1Query {
         return this.collection;
     }
 
-    public V1CollectionOperationQuery setCollection(String collectionName) {
+    protected V1CollectionOperationQuery setCollection(String collectionName) {
         if (!isValidCollectionName(collectionName)) {
             throw new InvalidCollectionNameException("Invalid collection name");
         }
@@ -26,7 +26,7 @@ public class V1CollectionOperationQuery extends V1Query {
         return this;
     }
 
-    public String Build() {
+    public String build() {
         if (this.collection == null) {
             throw new InvalidCollectionNameException("Collection name not set");
         }

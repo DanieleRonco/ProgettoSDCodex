@@ -1,13 +1,13 @@
-package it.unimib.sd2024.QueryBuilder;
+package it.unimib.sd2024.QueryBuilder.V1;
 
 public class KeyValue {
     private String key;
-    private String value;
+    private Object value;
 
     public KeyValue() {
     }
 
-    public KeyValue(String key, String value) {
+    public KeyValue(String key, Object value) {
         this.key = key;
         this.value = value;
     }
@@ -20,16 +20,16 @@ public class KeyValue {
         this.key = key;
     }
 
-    public String getValue() {
+    public Object getValue() {
         return this.value;
     }
 
-    public void setValue(String value) {
+    public void setValue(Object value) {
         this.value = value;
     }
 
     public boolean isEmpty() {
-        return (this.key == null || this.key.isEmpty()) && (this.value == null || this.value.isEmpty());
+        return (this.key == null || this.key.isEmpty()) && (this.value == null);
     }
 
     @Override

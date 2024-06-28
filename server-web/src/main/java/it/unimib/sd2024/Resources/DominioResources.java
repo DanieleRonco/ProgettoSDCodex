@@ -16,6 +16,7 @@ import jakarta.json.bind.JsonbBuilder;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.HeaderParam;
+import jakarta.ws.rs.PATCH;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
@@ -135,7 +136,7 @@ public class DominioResources {
     }
 
     /**
-     * Implementazione di POST "domain/register/{nome}/{TLD}/{durata}/{quantita}"
+     * Implementazione di POST "/domain/register/{nome}/{TLD}/{durata}/{quantita}"
      * @throws IOException 
      * @throws InterruptedException 
      */
@@ -187,6 +188,8 @@ public class DominioResources {
             else {
                 // si aggiorna lo stato ad 'acquiring'
                 DatabaseResponse rispostaAggiornaStato = comunicazioneDatabase.ExecuteQuery(QueryBuilder.V1().UPDATE().setCollection("domains").filter(new Filter().add("nome", nome).add("TLD", TLD)).updateOn(new UpdateDefinition().add("stato", "acquiring")));
+                if(rispostaAggiornaStato.isErrorResponse())
+                    return Response.status(500).build();
             }
         } else {
             // non presente, si crea il dominio e si imposta lo stato ad 'acquiring'
@@ -207,13 +210,13 @@ public class DominioResources {
             return Response.status(500).build(); // errore
         if(rispostaCartaPresente.getDetectedDocumentsCount() == 0){
             // non presente, si aggiunge
-            DatabaseResponse rispostaAggiuntaCarta = comunicazioneDatabase.ExecuteQuery(QueryBuilder.V1().INSERT().insert(carta));
+            DatabaseResponse rispostaAggiuntaCarta = comunicazioneDatabase.ExecuteQuery(QueryBuilder.V1().INSERT().setCollection("cards").insert(carta));
             if(rispostaAggiuntaCarta.isErrorResponse())
                 return Response.status(500).build(); // errore
         }
 
         // si aggiunge la registrazione
-        DatabaseResponse rispostaAggiuntaRegistrazione = comunicazioneDatabase.ExecuteQuery(QueryBuilder.V1().INSERT().insert(new Registrazione(nome, TLD, emailEToken.getUserEmail(), registrationDate, expirationDate)));
+        DatabaseResponse rispostaAggiuntaRegistrazione = comunicazioneDatabase.ExecuteQuery(QueryBuilder.V1().INSERT().setCollection("registered").insert(new Registrazione(nome, TLD, emailEToken.getUserEmail(), registrationDate, expirationDate)));
         if(rispostaAggiuntaRegistrazione.isErrorResponse())
             return Response.status(500).build();
 
@@ -223,5 +226,72 @@ public class DominioResources {
             return Response.status(500).build(); // errore
         
         return Response.status(200).build();
+    }
+
+    /**
+     * Implementazione di POST "domain/renewal/{nome}/{TLD}/{aggiunta}/{quantita}"
+     * @throws IOException 
+     * @throws InterruptedException 
+     */
+    @Path("/domain/renewal/{nome}/{TLD}/{aggiunta}/{quantita}")
+    @POST
+    public Response patchRenewal(@HeaderParam("Bearer") String token, @PathParam("nome") String nome, @PathParam("TLD") String TLD, @PathParam("aggiunta") int aggiunta, @PathParam("quantita") int quantita, Carta carta) throws InterruptedException, IOException {
+        // 0. autenticato
+        // 1. si ottiene l'email dell'utente
+        // 2. si ottiene il dominio
+        // 3. si verifica se la somma porteberre ad un errore
+        // 4. si verifica se il dominio è associato all'utente
+        //  4.1 associato, si aggiorna 'registered', si crea l'ordine in 'orders', eventualmente si inserisce la carta in 'cards'
+        //  4.2 non associato, non autorizzato
+        // ----------------------------------------------------------------------------------------------------------------------
+
+        // autenticato
+        if(!Autenticazione.checkAuthentication(token))
+            return Response.status(401).build(); // non autenticato
+        
+        // si ottiene l'email dell'utente
+        DatabaseResponse rispostaEmail = comunicazioneDatabase.ExecuteQuery(QueryBuilder.V1().FIND().setCollection("tokens").filter(new Filter().add("token", token)));
+        if(rispostaEmail.isErrorResponse())
+            return Response.status(500).build(); // errore
+        UtenteEmailEToken emailEToken = jsonb.fromJson(rispostaEmail.getRetrievedDocuments()[0], UtenteEmailEToken.class);
+
+        // si ottiene il dominio tramite registrazione
+        DatabaseResponse rispostaDominio = comunicazioneDatabase.ExecuteQuery(QueryBuilder.V1().FIND().setCollection("registered").filter(new Filter().add("nome", nome).add("TLD", TLD).add("email", emailEToken.getUserEmail())));
+        if(rispostaDominio.isErrorResponse())
+            return Response.status(500).build(); // errore
+        if(rispostaDominio.getDetectedDocumentsCount() != 1)
+            return Response.status(400).entity("dominio non registrato").build(); // dominio non registrato
+        Registrazione registrazione = jsonb.fromJson(rispostaDominio.getRetrievedDocuments()[0], Registrazione.class);
+
+        // si verifica se la somma porterebbe ad un errore        
+        LocalDateTime extendedDate = LocalDateTime.parse(registrazione.getExpirationDate()).plusYears(quantita);
+        LocalDateTime tenYearsDate = LocalDateTime.now().plusYears(10);
+        if(extendedDate.isAfter(tenYearsDate))
+            return Response.status(400).entity("si eccede il tempo massimo di registrazione (10 anni dalla data corrente)").build();
+
+        // si verifica se il dominio è associato all'utente
+        if(!emailEToken.getUserEmail().equals(registrazione.getUtenteEmail()))
+            return Response.status(401).entity("non sei il proprietario del dominio").build();
+        
+        // si aggiorna 'registered'
+        DatabaseResponse rispostaAggiornamentoData = comunicazioneDatabase.ExecuteQuery(QueryBuilder.V1().UPDATE().setCollection("registered").filter(new Filter().add("name", nome).add("TLD", TLD).add("email", emailEToken.getUserEmail())).updateOn(new UpdateDefinition().add("expirationDate", extendedDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy")))));
+        if(rispostaAggiornamentoData.isErrorResponse())
+            return Response.status(500).build(); // errore
+        
+        // si crea l'ordine in 'orders'
+        DatabaseResponse rispostaAggiuntaOrdine = comunicazioneDatabase.ExecuteQuery(QueryBuilder.V1().INSERT().setCollection("orders").insert(new Ordine(nome, TLD, emailEToken.getUserEmail(), carta.getNumero(), registrationDate, "renewal", String.valueOf(quantita))));
+        if(rispostaAggiuntaOrdine.isErrorResponse())
+            return Response.status(500).build(); // errore
+        
+        // eventualmente si inserisce la carta in 'cards'
+        DatabaseResponse rispostaCartaPresente = comunicazioneDatabase.ExecuteQuery(QueryBuilder.V1().FIND().setCollection("cards").filter(new Filter().add("numero", carta.getNumero())));
+        if(rispostaCartaPresente.isErrorResponse())
+            return Response.status(500).build(); // errore
+        if(rispostaCartaPresente.getDetectedDocumentsCount() == 0){
+            // non presente, si aggiunge
+            DatabaseResponse rispostaAggiuntaCarta = comunicazioneDatabase.ExecuteQuery(QueryBuilder.V1().INSERT().setCollection("cards").insert(carta));
+            if(rispostaAggiuntaCarta.isErrorResponse())
+                return Response.status(500).build(); // errore
+        }
     }
 }

@@ -5,15 +5,17 @@ public class Ordine {
     private String dominioNome;
     private String dominioTLD;
     private String utenteEmail;
+    private String numeroCarta;
     private String data;
     private String oggetto;
     private String quota;
 
     // costruttori
-    public Ordine(String dominioNome, String dominioTLD, String utenteEmail, String data, String oggetto, String quota){
+    public Ordine(String dominioNome, String dominioTLD, String utenteEmail, String numeroCarta, String data, String oggetto, String quota){
         this.setDominioNome(dominioNome);
         this.setDominioTLD(dominioTLD);
         this.setUtenteEmail(utenteEmail);
+        this.setNumeroCarta(numeroCarta);
         this.setData(data);
         this.setOggetto(oggetto);
         this.setQuota(quota);
@@ -28,6 +30,9 @@ public class Ordine {
     }
     public String getUtenteEmail(){
         return this.utenteEmail;
+    }
+    public String getNumeroCarta(){
+        return this.numeroCarta;
     }
     public String getData(){
         return this.data;
@@ -48,6 +53,9 @@ public class Ordine {
     }
     public void setUtenteEmail(String utenteEmail){
         this.utenteEmail = utenteEmail;
+    }
+    public void setNumeroCarta(String numeroCarta){
+        this.numeroCarta = numeroCarta;
     }
     public void setData(String data){
         this.data = data;

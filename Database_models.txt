@@ -11,15 +11,16 @@ tokens
 domains
 	nome
 	TLD
-	status - (active, expired, acquiring)
+	stato - (active, expired, acquiring)
 
 orders
 	nome - dominio
 	TLD  - dominio
 	email - utente
-	date
-	object (registrazione o rinnovo)
-	ammount
+	carta - carta
+	data
+	oggetto (registration, renewal)
+	quota
 
 registered
 	nome - dominio
@@ -27,3 +28,10 @@ registered
 	email - utente
 	registrationDate
 	expirationDate
+
+cards
+	numero
+	scadenza
+	cvv
+	nome
+	cognome

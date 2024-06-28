@@ -10,7 +10,7 @@ Client Web
 		tramite acquisto
 		registrazione (dominio, durata (minimo 1, massimo 10))
 		acquisto (nome, cognome, email, numero carta, scadenza carta, CVV carta, nome e cognome carta)
-	[ ] elenco dei domini registrati (dominio, registrazione, scadenza)
+	[X] elenco dei domini registrati (dominio, registrazione, scadenza)
 		anche domini scaduti e non rinnovati, perciò tutti i domini registrati
 	[X] elenco degli ordini (dominio, data ordine, oggetto (registrazione o rinnovo), quota pagata)
 	[ ] rinnovare un dominio

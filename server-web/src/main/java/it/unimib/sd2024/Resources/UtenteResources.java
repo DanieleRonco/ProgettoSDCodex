@@ -56,7 +56,7 @@ public class UtenteResources {
         DatabaseResponse rispostaInserimento = comunicazioneDatabase.ExecuteQuery(QueryBuilder.V1().INSERT().setCollection("users").insert(utente));
         if(rispostaInserimento.isErrorResponse())
             return Response.status(500).build(); // errore
-        return Response.status(200).entity("registrazione effettuata").build(); // registrazione effettuata
+        return Response.status(201).entity("registrazione effettuata").build(); // registrazione effettuata
     }
 
     /**

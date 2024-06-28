@@ -1,5 +1,7 @@
 # Progetto Sistemi Distribuiti 2023-2024 - TCP
 
+
+
 Documentare qui il protocollo su socket TCP che espone il database.
 
 Come scritto anche nel documento di consegna del progetto, si ha completa libertà su come implementare il protoccolo e i comandi del database. Alcuni suggerimenti sono:

@@ -16,7 +16,6 @@ import jakarta.json.bind.JsonbBuilder;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.HeaderParam;
-import jakarta.ws.rs.PATCH;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
@@ -235,7 +234,7 @@ public class DominioResources {
      */
     @Path("/domain/renewal/{nome}/{TLD}/{aggiunta}/{quantita}")
     @POST
-    public Response patchRenewal(@HeaderParam("Bearer") String token, @PathParam("nome") String nome, @PathParam("TLD") String TLD, @PathParam("aggiunta") int aggiunta, @PathParam("quantita") int quantita, Carta carta) throws InterruptedException, IOException {
+    public Response postRenewal(@HeaderParam("Bearer") String token, @PathParam("nome") String nome, @PathParam("TLD") String TLD, @PathParam("aggiunta") int aggiunta, @PathParam("quantita") int quantita, Carta carta) throws InterruptedException, IOException {
         // 0. autenticato
         // 1. si ottiene l'email dell'utente
         // 2. si ottiene il dominio
@@ -279,7 +278,7 @@ public class DominioResources {
             return Response.status(500).build(); // errore
         
         // si crea l'ordine in 'orders'
-        DatabaseResponse rispostaAggiuntaOrdine = comunicazioneDatabase.ExecuteQuery(QueryBuilder.V1().INSERT().setCollection("orders").insert(new Ordine(nome, TLD, emailEToken.getUserEmail(), carta.getNumero(), registrationDate, "renewal", String.valueOf(quantita))));
+        DatabaseResponse rispostaAggiuntaOrdine = comunicazioneDatabase.ExecuteQuery(QueryBuilder.V1().INSERT().setCollection("orders").insert(new Ordine(nome, TLD, emailEToken.getUserEmail(), carta.getNumero(), registrazione.getRegistrationDate(), "renewal", String.valueOf(quantita))));
         if(rispostaAggiuntaOrdine.isErrorResponse())
             return Response.status(500).build(); // errore
         
@@ -293,5 +292,8 @@ public class DominioResources {
             if(rispostaAggiuntaCarta.isErrorResponse())
                 return Response.status(500).build(); // errore
         }
+
+        // rinnovo avvenuto correttamente
+        return Response.status(200).build();
     }
 }

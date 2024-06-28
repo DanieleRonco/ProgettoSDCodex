@@ -44,7 +44,7 @@ public class OrdineResources {
     @Path("/myOrders")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getMyOrdersList(@HeaderParam("Bearer") String token) throws InterruptedException, IOException {
+    public Response getMyOrders(@HeaderParam("Bearer") String token) throws InterruptedException, IOException {
         // ottenere l'elenco degli ordini dell'utente
         // 0. si verifica l'autenticazione
         // 1. si ottiene l'email dell'utente, dato il token
@@ -65,7 +65,7 @@ public class OrdineResources {
                 DatabaseResponse rispostaOrdini = comunicazioneDatabase.ExecuteQuery(QueryBuilder.V1().FIND().setCollection("orders").filter(new Filter().add("email", emailEToken.getUserEmail())));
                 if(!rispostaOrdini.isErrorResponse()){
                     // nessun errore
-                    // TODO: verificare cosa ritorna
+                    // TODO: verificare cosa ritorna e sistemare con solo i campi richiesti
                     return Response.status(200).entity(rispostaOrdini.getRetrievedDocuments()).build();
                 } else {
                     // errore

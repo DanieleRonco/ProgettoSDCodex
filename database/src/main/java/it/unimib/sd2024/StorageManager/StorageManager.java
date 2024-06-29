@@ -4,9 +4,7 @@ import it.unimib.sd2024.Server.Filter;
 
 import javax.json.Json;
 import javax.json.JsonObject;
-import java.io.IOException;
-import java.io.StringReader;
-import java.io.Writer;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -14,13 +12,15 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Scanner;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.Semaphore;
 
 
 public class StorageManager {
     private static final char[] ILLEGAL_CHARACTERS = {'/', '\n', '\r', '\t', '\0', '\f', '`', '?', '*', '\\', '<', '>', '|', '\"', ':'};
     private final Path pathToStorageDir;
-    private final HashMap<String, ReentrantReadWriteLock> locks;
+    private final HashMap<String, Semaphore> readLocks;
+    private final HashMap<String, Semaphore> writeLocks;
 
     public StorageManager() throws IOException {
         this(Paths.get("collections").toAbsolutePath().toString());
@@ -28,7 +28,8 @@ public class StorageManager {
 
     public StorageManager(String pathToStorageDir) throws IOException {
         this.pathToStorageDir = Files.createDirectories(Paths.get(pathToStorageDir));
-        this.locks = new HashMap<>();
+        this.readLocks = new HashMap<>();
+        this.writeLocks = new HashMap<>();
     }
 
     public Path getPathToStorageDir() {
@@ -47,50 +48,114 @@ public class StorageManager {
         return true;
     }
 
+    private void lockRead(String collection) throws InterruptedException, BrokenBarrierException {
+//        if there is a write operation wait for it
+        if (writeLocks.containsKey(collection)) {
+            writeLocks.get(collection).acquire();
+        }
+
+        if (!readLocks.containsKey(collection)) {
+            var s = new Semaphore(1);
+            s.acquire();
+            readLocks.put(collection, s);
+        }else{
+            readLocks.get(collection).acquire();
+        }
+    }
+
+    private void unlockRead(String collection) {
+        readLocks.get(collection).release();
+        if (writeLocks.containsKey(collection))
+            writeLocks.get(collection).release();
+    }
+
+    private void lockWrite(String collection) throws InterruptedException, BrokenBarrierException {
+//        if there is a write operation wait for it
+        if (writeLocks.containsKey(collection)) {
+            System.out.println("there is a write lock, waiting...");
+            writeLocks.get(collection).acquire();
+            System.out.println("acquired write lock");
+        }
+        if (readLocks.containsKey(collection)) {
+            System.out.println("there is a write lock, waiting...");
+            readLocks.get(collection).acquire();
+            System.out.println("acquired read lock");
+        }
+
+        if (!writeLocks.containsKey(collection)) {
+            var s = new Semaphore(1);
+            s.acquire();
+            writeLocks.put(collection, s);
+        }
+    }
+
+    private void unlockWrite(String collection) {
+        writeLocks.get(collection).release();
+        System.out.println("released write lock");
+        if (readLocks.containsKey(collection)) {
+            readLocks.get(collection).release();
+            System.out.println("released read lock");
+        }
+    }
+
     public void createNewCollectionStorage(String collectionName) throws IOException, InvalidCollectionName {
         if (!isValidCollectionName(collectionName)) {
             throw new InvalidCollectionName();
         }
-        Files.createFile(Paths.get(pathToStorageDir.toString(), collectionName + ".json"));
-//        System.out.println("Created new collection storage at: " + path);
-//        Files.writeString(path, "[]");
+
+        try {
+            lockWrite(collectionName);
+            Files.createFile(getCollectionPath(collectionName));
+        } catch (InterruptedException | BrokenBarrierException e) {
+            throw new RuntimeException(e);
+        } finally {
+            unlockWrite(collectionName);
+        }
     }
 
     public void deleteCollectionStorage(String collectionName) throws IOException, InvalidCollectionName {
         if (!isValidCollectionName(collectionName)) {
             throw new InvalidCollectionName();
         }
-        var path = Paths.get(pathToStorageDir.toString(), collectionName + ".json");
-        Files.delete(path);
+
+        try {
+            lockWrite(collectionName);
+            System.out.println("acquired write lock, deleting collection");
+            Files.delete(getCollectionPath(collectionName));
+        } catch (InterruptedException | BrokenBarrierException e) {
+            throw new RuntimeException(e);
+        } finally {
+            unlockWrite(collectionName);
+            System.out.println("released write lock");
+        }
     }
 
     /*
-    * TODO:
-    *  CHECK https://stackoverflow.com/questions/5999100/is-there-a-block-until-condition-becomes-true-function-in-java
-    * serve per gestire i lock, usa la wait perché sti lock non mi tornano
-    * creare una collection non ha locks
-    * cancellare una collezione deve guardare se in quel momento é in fase di lettura o scrittura
-    *
-    * filtra deve aspettare che non ci siano scritture in corso ma ci possono essere lettura
-    * la scrittura deve aspettare che non ci siano scritture o letture in corso perché potrebbe creare problemi con i buffers
-    *
-    * l'update prima legge le collezioni, il controller fa le modifiche, cancella le risorse definite (per id) e poi le
-    * riscrive, altrimenti ci sono problemi di concorrenza
-    * */
+     * TODO:
+     *  CHECK https://stackoverflow.com/questions/5999100/is-there-a-block-until-condition-becomes-true-function-in-java
+     * serve per gestire i lock, usa la wait perché sti lock non mi tornano
+     * creare una collection non ha locks
+     * cancellare una collezione deve guardare se in quel momento é in fase di lettura o scrittura
+     *
+     * filtra deve aspettare che non ci siano scritture in corso ma ci possono essere lettura
+     * la scrittura deve aspettare che non ci siano scritture o letture in corso perché potrebbe creare problemi con i buffers
+     *
+     * l'update prima legge le collezioni, il controller fa le modifiche, cancella le risorse definite (per id) e poi le
+     * riscrive, altrimenti ci sono problemi di concorrenza
+     * */
 
     public boolean doesCollectionExist(String collectionName) throws InvalidCollectionName {
         if (!isValidCollectionName(collectionName)) {
             throw new InvalidCollectionName();
         }
-        var path = Paths.get(pathToStorageDir.toString(), collectionName + ".json");
-        return Files.exists(path);
+        return Files.exists(getCollectionPath(collectionName));
     }
 
     public Scanner OpenReaderCollectionStorage(String collectionName) throws IOException, InvalidCollectionName {
         if (!isValidCollectionName(collectionName)) {
             throw new InvalidCollectionName();
         }
-        return new Scanner(Paths.get(pathToStorageDir.toString(), collectionName + ".json").toFile());
+        return new Scanner(getCollectionPath(collectionName).toFile());
     }
 
     public List<JsonObject> filterCollection(String collection, List<Filter> filters) throws InvalidCollectionName, IOException {
@@ -98,14 +163,11 @@ public class StorageManager {
             throw new InvalidCollectionName();
         }
 
-        if (!locks.containsKey(collection)) {
-            locks.put(collection, new ReentrantReadWriteLock());
-        }
         try {
-            locks.get(collection).readLock().lock();
-
+            lockRead(collection);
+            System.out.println("acquired read lock, filtering now");
             var result = new ArrayList<JsonObject>();
-            var s = new Scanner(Paths.get(pathToStorageDir.toString(), collection + ".json").toFile());
+            var s = new Scanner(getCollectionPath(collection).toFile());
 
             while (s.hasNext()) {
                 var line = s.nextLine();
@@ -167,9 +229,15 @@ public class StorageManager {
                 }
             }
 
+            System.out.println("sleeping 2 sec to simulate READ");
+            Thread.sleep(2000);
             return result;
+
+        } catch (BrokenBarrierException | InterruptedException e) {
+            throw new RuntimeException(e);
         } finally {
-            locks.get(collection).readLock().lock();
+            unlockRead(collection);
+            System.out.println("released read lock");
         }
     }
 
@@ -179,57 +247,32 @@ public class StorageManager {
         }
         return Files.newBufferedWriter(Paths.get(pathToStorageDir.toString(), collectionName + ".json"));
     }
-//
-//    public void WriteLockCollectionStorage(String collection) {
-//        if (!writeLocks.containsKey(collection)) {
-//            writeLocks.put(collection, new ReentrantLock());
-//        }
-//        writeLocks.get(collection).lock();
-//    }
-//
-//    public void WriteUnlockCollectionStorage(String collection) {
-//        writeLocks.get(collection).writeLock().unlock();
-//    }
-//
-//    public boolean isWriteLocked(String collection) {
-//        return writeLocks.get(collection).isWriteLocked();
-//    }
-//
-//    public void ReadLockCollectionStorage(String collection) {
-//        if (!writeLocks.containsKey(collection)) {
-//            writeLocks.put(collection, new ReentrantLock());
-//        }
-//        writeLocks.get(collection).readLock().lock();
-//    }
-//
-//    public void ReadUnlockCollectionStorage(String collection) {
-//        writeLocks.get(collection).readLock().unlock();
-//    }
-//
-//    public boolean isReadLocked(String collection) {
-//        return writeLocks.get(collection).getReadHoldCount() > 0;
-//    }
+
+    private Path getCollectionPath(String collection) {
+        return Paths.get(pathToStorageDir.toString(), collection + ".json");
+    }
 
     public synchronized void appendToCollection(String collection, JsonObject newDocument) throws IOException, InvalidCollectionName {
         if (!isValidCollectionName(collection)) {
             throw new InvalidCollectionName();
         }
 
-        if (!locks.containsKey(collection)) {
-            locks.put(collection, new ReentrantReadWriteLock());
-        }
-        locks.get(collection).writeLock().lock();
-        System.out.println("got lock");
+        FileWriter fr = null;
         try {
-            var buf = Files.newBufferedWriter(Paths.get(pathToStorageDir.toString(), collection + ".json"));
-            buf.append(newDocument.toString()).append("\n");
-            System.out.println("eepy");
-            Thread.sleep(1000);
-            buf.close();
-        } catch (InterruptedException e) {
+            System.out.println("waiting write lock....");
+            lockWrite(collection);
+            System.out.println("acquired write lock");
+            File f = new File(getCollectionPath(collection).toString());
+            fr = new FileWriter(f, true);
+            fr.write(newDocument.toString() + "\n");
+            System.out.println("sleeping 2 sec to simulate write");
+            Thread.sleep(2000);
+        } catch (InterruptedException | BrokenBarrierException e) {
             throw new RuntimeException(e);
         } finally {
-            locks.get(collection).writeLock().unlock();
+            if (fr != null)
+                fr.close();
+            unlockWrite(collection);
         }
     }
 }

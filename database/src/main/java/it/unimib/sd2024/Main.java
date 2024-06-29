@@ -38,16 +38,14 @@ public class Main {
                     break;
             }
             if (arg.startsWith("--port=") || arg.startsWith("-p=")) {
-                arg = arg.substring(7);
                 try {
-                    port = Integer.parseInt(arg);
+                    port = Integer.parseInt(arg.split("=")[1]);
                 } catch (NumberFormatException e) {
                     System.out.println("Port must be a number");
                     System.exit(1);
                 }
             } else if (arg.startsWith("--log-level=") || arg.startsWith("-ll=")) {
-                arg = arg.substring(12);
-                switch (arg.toUpperCase()) {
+                switch (arg.split("=")[1].toUpperCase()) {
                     case "DEBUG":
                         System.out.println("Log level set to DEBUG");
                         logLevel = LogLevelType.DEBUG;
@@ -73,7 +71,7 @@ public class Main {
 
         Logger log = new Logger(logLevel);
         Controller controller = new Controller(log);
-        Server server = new Server(port, log,controller);
+        Server server = new Server(port, log, controller);
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {

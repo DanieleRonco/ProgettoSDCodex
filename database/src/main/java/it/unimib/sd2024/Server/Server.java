@@ -1,6 +1,8 @@
 package it.unimib.sd2024.Server;
 
 import it.unimib.sd2024.Controller.Controller;
+import it.unimib.sd2024.Controller.ErrorKindType;
+import it.unimib.sd2024.Controller.Response;
 import it.unimib.sd2024.Logger.Logger;
 import jakarta.json.bind.JsonbBuilder;
 
@@ -72,8 +74,9 @@ public class Server {
         @Override
         public void run() {
             log.Debug("Connected to " + client.getRemoteSocketAddress());
+            PrintWriter out = null;
             try {
-                var out = new PrintWriter(client.getOutputStream(), true);
+                out = new PrintWriter(client.getOutputStream(), true);
                 var in = new BufferedReader(new InputStreamReader(client.getInputStream()));
 
                 JsonReader jsonReader = Json.createReader(in);
@@ -87,6 +90,20 @@ public class Server {
                 client.close();
             } catch (Exception e) {
                 log.Error("error handling request: " + e.getMessage());
+                if (out == null) {
+                    log.Error("error writing response, output stream is null");
+                    e.printStackTrace();
+                } else {
+                    JsonbBuilder.create().toJson(
+                            new Response()
+                                    .setError(true)
+                                    .setErrorKind(ErrorKindType.INTERNAL_ERROR)
+                                    .setMessage("error handling request"),
+                            out);
+                    out.flush();
+                    out.close();
+                }
+
                 e.printStackTrace();
             } finally {
                 try {

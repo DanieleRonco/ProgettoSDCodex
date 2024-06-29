@@ -2,19 +2,22 @@
 
 ## `/users/register`
 ### POST
-**Descrizione**:
-    consente la registrazione di un Utente.
-**Parametri**:
-    nessun parametro.
-**Header**:
-    `Content-Type` con il valore `application/json`, in aggiunta a quelli già impostati automaticamente.
-**Body Richiesta**:
-    rappresentazione in formato JSON di un Utente, con i seguenti campi: `nome`, `cognome`, `email`, `password`.
-**Risposta**:
-    nessun contenuto.
+**Descrizione**: consente la registrazione di un Utente.
+
+**Parametri**: nessun parametro.
+
+**Header**: `Content-Type` con il valore `application/json`, in aggiunta a quelli già impostati automaticamente.
+
+**Body Richiesta**: rappresentazione in formato JSON di un Utente, con i seguenti campi: `nome`, `cognome`, `email`, `password`.
+
+**Risposta**: nessun contenuto.
+
 **Codici di Stato Restituiti**:
     201 Created
+
     400 Bad Request.
+
+    
 
 ## `/users/login`
 ### POST

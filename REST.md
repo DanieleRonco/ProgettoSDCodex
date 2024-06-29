@@ -13,11 +13,12 @@
 **Risposta**: nessun contenuto.
 
 **Codici di Stato Restituiti**:
+
     201 Created
 
     400 Bad Request.
 
-    
+
 
 ## `/users/login`
 ### POST

@@ -29,6 +29,10 @@ public class V1QueryBuilder {
         return new V1FindQuery();
     }
 
+    public V1FindQuery FIND(String collection) {
+        return new V1FindQuery(collection);
+    }
+
     public V1DeleteQuery DELETE() {
         return new V1DeleteQuery();
     }

@@ -1,16 +1,17 @@
 # Progetto Sistemi Distribuiti 2023-2024 - TCP
 
 introduzione
-il protocollo si basa sull'invio di stringhe tra un server web, che opera come client, ed un database, che opera come server.
-a che modello fa riferimento?
+il protocollo si basa sull'invio di stringhe (protocollo testuale) tra un server web, che opera come client, ed un database, che opera come server.
+DOMANDA: ti sei ispirato ad un protocollo nello specifico?
 
 server web (client)
 il server web instaura una connessione con il database tramite una socket sulla porta 3030.
-il server manda al database una stringa che rappresenta il comando da eseguire nel server sul database.
-il server ricede dal database una stringa contenente la risposta alla richiesta precedente.
+1 il server manda al database una stringa che rappresenta il comando da eseguire nel server sul database.
+2 il server ricede dal database una stringa contenente la risposta alla richiesta precedente.
 
 database (server)
 il database rimane in ascolto sulla porta 3030 al fine di soddisfare le richieste del server
+1. riceve una stringa rappresentante un comando costituito da diversi argomenti
 
 richiesta
 la richiesta viene composta lato server per mezzo di un QeuryBuilder
@@ -21,36 +22,75 @@ delete - ... così per tutte lo so, vedi se manca qualcosa
 drop
 find
 insert
-ping
+ping - ping verso il database
 update
 
-operazioni logiche: come vengono tradotte
+CREATE
+DOMANDA: consente la creazione di un documento o di una collezione?
+DOMANDA: struttura?
+
+DELETE
+DOMANDA: consente la eliminazione di un documento o di una collezione?
+DOMANDA: struttura?
+
+DROP
+DOMANDA: cosa consente? eliminazione di una collezione?
+DOMANDA: struttura?
+
+FIND
+consente di ottenere i documenti che soddisfano parametri della ricerca
+find
+collection
+{query}
+
+INSERT
+DOMANDA: cosa consente? di inserire un documento in una collezione? sappi che l'ho utilizzata così
+DOMANDA: struttura?
+
+PING
+consente di determinare lo stato della connesione con il database
+DOMANDA: struttura?
+
+UPDATE
+consente di aggiornare un Documento in una Collezione
+struttura
+update
+collection
+{query}
+{"chiave":"nuovo valore", "chiave2":"nuovo valore"} = {aggiornamento} che si struttura in quella maniera
+
+operazioni logiche: come vengono tradotte all'interno delle query. 
+DOMANDA: in quale punto deve essere posta l'operazione logica? fammi un esempio. immagino tra "chiave" e "valore".
 : -> ==
 !: -> !=
 >: -> >
 >=: -> >=
 
-keywords: parole chiave
+keywords: parole chiave ammesse
 false, true, null, date, OR
 
+OR logico - come viene tradotto l'or logico
+L'or logico giene tradotto nella seguente maniera
+
 esempio di struttura:
+un esempio di struttura è il seguente. Ispirandosi al formato JSON, prevede coppie chiave-valore. la chiave è sempre una stringa, mentre il valore può essere
+una stringa, un intero, un valore booleano true o false, null, una data. Le virgole ',' rappresentano AND logici mentre l'OR logico viene tradotto nella seguente maniera 'OR["chiave":"valore", ...]'
 {"chiave":"valore", "chiave":123, "chiave": false|true, "chiave":null, "chiave"!:null, "chiave":date("10-20-23"), OR:["chiave":"valore", ...]}
 
-struttura aggiornamento
-update
-collection
-{query}
-{"chiave":"nuovo valore", "chiave2":"nuovo valore"}
-
-dimmi se altre operazioni hanno strtture diverse
-
+DOMANDA
+volevo dire che il server può creare query utilizzando un query builder e il database le può parsare. Non avendolo fatto, non so come mettere giù la frase. Te che sai come fare, butta giù due righe, poi vedo io di sistemare la forma e tutto. è solo l'idea ecco.
 
 risposta
-la risposta, parsata da stringa, è strututrata nella seguente maniera
+la risposta del database è una stringa che, una volta parsata, prevede sempre la seguente struttura:
     isError indica se si è verificato un errore nell'esecuzione della richiesta
-    message ?
+    
+    message 
+    DOMANDA: cosa rappresenta?
+    
     affectedDocumentsCount numero di documenti interessati dall'operazione 
+    
     detectedDocumentsCount numero di documenti rilevati, che soddifano la condizione di ricerca espressa
+    
     retrievedDocuments array di documenti restituiti
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------

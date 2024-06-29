@@ -65,8 +65,10 @@ public class OrdineResources {
                 DatabaseResponse rispostaOrdini = comunicazioneDatabase.ExecuteQuery(QueryBuilder.V1().FIND().setCollection("orders").filter(new Filter().add("email", emailEToken.getUserEmail())));
                 if(!rispostaOrdini.isErrorResponse()){
                     // nessun errore
-                    // TODO: verificare cosa ritorna e sistemare con solo i campi richiesti
-                    return Response.status(200).entity(rispostaOrdini.getRetrievedDocuments()).build();
+                    Ordine[] ordini = new Ordine[rispostaOrdini.getRetrievedDocuments().length];
+                    for(int i = 0; i < ordini.length; i++)
+                        ordini[i] = jsonb.fromJson(rispostaOrdini.getRetrievedDocuments()[i], Ordine.class);
+                    return Response.status(200).entity(jsonb.toJson(ordini)).build();
                 } else {
                     // errore
                     return Response.status(500).build();

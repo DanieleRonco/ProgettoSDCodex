@@ -13,6 +13,7 @@ import it.unimib.sd2024.Models.*;
 import it.unimib.sd2024.Utils.Autenticazione;
 import jakarta.json.bind.Jsonb;
 import jakarta.json.bind.JsonbBuilder;
+import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.HeaderParam;
@@ -80,7 +81,8 @@ public class DominioResources {
                         DatabaseResponse rispostaUtente = comunicazioneDatabase.ExecuteQuery(QueryBuilder.V1().FIND().setCollection("users").filter(new Filter().add("email", registrazione.getUtenteEmail())));
                         if(!rispostaUtente.isErrorResponse()){
                             Utente utente = jsonb.fromJson(rispostaUtente.getRetrievedDocuments()[0], Utente.class);
-                            return Response.status(200).entity(jsonb.toJson(new UtenteERegistrazione(utente, registrazione))).build();
+                            // si possiede Utente e Registrazione, si crea il JSON
+                            return Response.status(200).entity(jsonb.toJson(new UtenteEExpirationDate(utente, registrazione.getExpirationDate()))).build();
                         } else {
                             return Response.status(500).build();
                         }
@@ -122,8 +124,10 @@ public class DominioResources {
             DatabaseResponse rispostaDomini = comunicazioneDatabase.ExecuteQuery(QueryBuilder.V1().FIND().setCollection("registered"));
             if(!rispostaDomini.isErrorResponse()){
                 // nessun errore
-                // TODO: verificare cosa ritorna
-                return Response.status(200).entity(rispostaDomini.getRetrievedDocuments()).build();
+                Registrazione[] registrazioni = new Registrazione[rispostaDomini.getRetrievedDocuments().length];
+                for(int i = 0; i < registrazioni.length; i++)
+                    registrazioni[i] = jsonb.fromJson(rispostaDomini.getRetrievedDocuments()[i], Registrazione.class);
+                return Response.status(200).entity(jsonb.toJson(registrazioni)).build();
             } else {
                 // errore
                 return Response.status(500).build();
@@ -141,6 +145,7 @@ public class DominioResources {
      */
     @Path("/register/{nome}/{TLD}/{durata}/{quantita}")
     @POST
+    @Consumes(MediaType.APPLICATION_JSON)
     public Response postRegister(@HeaderParam("Bearer") String token, @PathParam("nome") String nome, @PathParam("TLD") String TLD, @PathParam("durata") int durata, @PathParam("quantita") float quantita, Carta carta) throws InterruptedException, IOException {
         // informazioni su 'dominio', 'durata' e 'quantita' in chiaro nell'header
         // informazioni su 'carta' non in chiaro nell'header ma nel body
@@ -232,8 +237,9 @@ public class DominioResources {
      * @throws IOException 
      * @throws InterruptedException 
      */
-    @Path("/domain/renewal/{nome}/{TLD}/{aggiunta}/{quantita}")
+    @Path("/renewal/{nome}/{TLD}/{aggiunta}/{quantita}")
     @POST
+    @Consumes(MediaType.APPLICATION_JSON)
     public Response postRenewal(@HeaderParam("Bearer") String token, @PathParam("nome") String nome, @PathParam("TLD") String TLD, @PathParam("aggiunta") int aggiunta, @PathParam("quantita") int quantita, Carta carta) throws InterruptedException, IOException {
         // 0. autenticato
         // 1. si ottiene l'email dell'utente

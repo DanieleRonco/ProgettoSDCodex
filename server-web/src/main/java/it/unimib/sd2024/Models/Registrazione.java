@@ -1,9 +1,12 @@
 package it.unimib.sd2024.Models;
 
+import jakarta.json.bind.annotation.JsonbTransient;
+
 public class Registrazione {
     // attributi privati
     private String dominioNome;
     private String dominioTLD;
+    @JsonbTransient
     private String utenteEmail;
     private String registrationDate;
     private String expirationDate;

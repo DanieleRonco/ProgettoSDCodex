@@ -1,10 +1,13 @@
 package it.unimib.sd2024.Models;
 
+import jakarta.json.bind.annotation.JsonbTransient;
+
 public class Utente {
     // attributi privati
     private String nome;
     private String cognome;
     private String email;
+    @JsonbTransient
     private String password;
 
     // costruttori

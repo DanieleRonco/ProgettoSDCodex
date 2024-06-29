@@ -1,10 +1,14 @@
 package it.unimib.sd2024.Models;
 
+import jakarta.json.bind.annotation.JsonbTransient;
+
 public class Ordine {
     // attributi privati
     private String dominioNome;
     private String dominioTLD;
+    @JsonbTransient
     private String utenteEmail;
+    @JsonbTransient
     private String numeroCarta;
     private String data;
     private String oggetto;

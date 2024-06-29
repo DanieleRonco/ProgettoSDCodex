@@ -24,6 +24,29 @@ public class Controller {
         this.storageManager = new StorageManager();
     }
 
+    private String generateNewId() {
+        return UUID.randomUUID().toString();
+    }
+
+    private Response checkIfCollectionExists(String collection) {
+        try {
+            if (!storageManager.doesCollectionExist(collection)) {
+                log.Info("collection [" + collection + "] does not exists");
+                return new Response()
+                        .setError(true)
+                        .setErrorKind(ErrorKindType.COLLECTION_DOES_NOT_EXIST)
+                        .setMessage("collection [" + collection + "] does not exist");
+            }
+        } catch (InvalidCollectionName e) {
+            log.Info("invalid collection name: " + e);
+            return new Response()
+                    .setError(true)
+                    .setErrorKind(ErrorKindType.INVALID_COLLECTION_NAME)
+                    .setMessage("collection [" + collection + "] is unprocessable");
+        }
+        return null;
+    }
+
     private String isRequestProcessable(Request request) {
         if (request == null) {
             return "request can not be null";
@@ -79,7 +102,9 @@ public class Controller {
 
     public Response handlePingQuery() {
         log.Info("handle ping query");
-        return new Response().setMessage("pong");
+        var response = new Response().setMessage("pong");
+        log.Debug("ping query handled successfully");
+        return response;
     }
 
     public Response handleCreateQuery(Request req) {
@@ -105,7 +130,9 @@ public class Controller {
                     .setErrorKind(ErrorKindType.INTERNAL_ERROR)
                     .setMessage("error creating collection storage: " + e);
         }
-        return new Response().setMessage("collection [" + req.getCollectionName() + "] created");
+        var response = new Response().setMessage("collection [" + req.getCollectionName() + "] created");
+        log.Debug("create query handled successfully");
+        return response;
     }
 
     public Response dropCollection(String collectionName) {
@@ -131,7 +158,9 @@ public class Controller {
                     .setErrorKind(ErrorKindType.INTERNAL_ERROR)
                     .setMessage("error dropping collection storage: " + e);
         }
-        return new Response().setMessage("collection [" + collectionName + "] dropped");
+        var response = new Response().setMessage("collection [" + collectionName + "] dropped");
+        log.Debug("drop query handled successfully");
+        return response;
     }
 
     public Response insertDocument(String collectionName, JsonObject document) {
@@ -158,11 +187,7 @@ public class Controller {
             builder.add("_id", documentId);
         }
 
-//        Scanner collection = null;
-//        Writer w = null;
         try {
-//            log.Debug("locking write lock for collection [" + collectionName + "]");
-
 //            we do this check only if the document id is not generated
 //            because we cannot trust the id provided by the user
 //            the generated id is a UUID, so we can trust that it will be unique
@@ -181,52 +206,21 @@ public class Controller {
                             .setMessage("document with id [" + documentId + "] already exists in collection [" + collectionName + "]");
 
                 }
-//                log.Debug("read lock");
-//                storageManager.ReadLock
-//                CollectionStorage(collectionName);
-//                collection = storageManager.OpenReaderCollectionStorage(collectionName);
-//                while (collection.hasNext()) {
-//                    var line = collection.nextLine();
-//                    var json = Json.createReader(new StringReader(line)).readObject();
-//                    if (json.get("_id").toString().equals(documentId)) {
-//                        log.Info("document with id [" + documentId + "] already exists in collection [" + collectionName + "]");
-////                        storageManager.ReadUnlockCollectionStorage(collectionName);
-//                        return new Response()
-//                                .setError(true)
-//                                .setErrorKind(ErrorKindType.DOCUMENT_ID_ALREADY_EXISTS)
-//                                .setMessage("document with id [" + documentId + "] already exists in collection [" + collectionName + "]");
-//                    }
-//                }
-//                log.Debug("unlocking read");
-//                storageManager.ReadUnlockCollectionStorage(collectionName);
             }
-            log.Debug("sleeping to check how things work");
-            Thread.sleep(5000);
-            log.Debug("done sleeping");
-            //            log.Debug("write lock");
-//            storageManager.WriteLockCollectionStorage(collectionName);
-//            log.Debug("opening writer");
-//            w = storageManager.OpenWriterCollectionStorage(collectionName);
-//            log.Debug("writing to collection");
+            log.Debug("attempt to append document to collection");
             storageManager.appendToCollection(collectionName, builder.build());
-
+            log.Debug("done writing to collection");
         } catch (IOException | InvalidCollectionName e) {
             log.Error("error inserting document into collection: " + e);
             return new Response()
                     .setError(true)
                     .setErrorKind(ErrorKindType.INTERNAL_ERROR)
                     .setMessage("error inserting document into collection: " + e);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        } finally {
-            log.Debug("releasing resources for collection [" + collectionName + "]");
-//            if (storageManager.isReadLocked(collectionName))
-//                storageManager.ReadUnlockCollectionStorage(collectionName);
-//            if (storageManager.isWriteLocked(collectionName))
-//                storageManager.WriteUnlockCollectionStorage(collectionName);
         }
 
-        return new Response().setMessage("inserted document into collection [" + collectionName + "]");
+        var response = new Response().setMessage("inserted document into collection [" + collectionName + "]");
+        log.Debug("insert query handled successfully");
+        return response;
     }
 
     private Response findDocument(String collectionName, List<Filter> filters) {
@@ -242,7 +236,9 @@ public class Controller {
             for (int i = 0; i < documents.size(); i++) {
                 docs[i] = documents.get(i).toString();
             }
-            return new Response().setRetrievedDocuments(docs);
+            var response = new Response().setRetrievedDocuments(docs);
+            log.Debug("find query handled successfully");
+            return response;
         } catch (IOException | InvalidCollectionName e) {
             log.Error("error finding documents in collection: " + e);
             return new Response()
@@ -250,29 +246,6 @@ public class Controller {
                     .setErrorKind(ErrorKindType.INTERNAL_ERROR)
                     .setMessage("error finding documents in collection: " + e);
         }
-    }
-
-    private String generateNewId() {
-        return UUID.randomUUID().toString();
-    }
-
-    private Response checkIfCollectionExists(String collection) {
-        try {
-            if (!storageManager.doesCollectionExist(collection)) {
-                log.Info("collection [" + collection + "] does not exists");
-                return new Response()
-                        .setError(true)
-                        .setErrorKind(ErrorKindType.COLLECTION_DOES_NOT_EXIST)
-                        .setMessage("collection [" + collection + "] does not exist");
-            }
-        } catch (InvalidCollectionName e) {
-            log.Info("invalid collection name: " + e);
-            return new Response()
-                    .setError(true)
-                    .setErrorKind(ErrorKindType.INVALID_COLLECTION_NAME)
-                    .setMessage("collection [" + collection + "] is unprocessable");
-        }
-        return null;
     }
 }
 

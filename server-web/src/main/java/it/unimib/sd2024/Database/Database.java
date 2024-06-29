@@ -6,31 +6,27 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.net.UnknownHostException;
 
 public class Database {
     private final static int DEFAULT_PORT = 3030;
     private final static int DEFAULT_TIMEOUT = 5 * 1000;
     private final InetSocketAddress address;
-    private final DatabaseConnectionPool connectionPool;
     private int timeout; //connection timeout in milliseconds
 
 
-    public Database() throws IOException {
+    public Database() throws IllegalArgumentException, UnknownHostException {
         this(DEFAULT_PORT, InetAddress.getLocalHost(), DEFAULT_TIMEOUT);
     }
 
-    public Database(int port, InetAddress hostname) throws IllegalArgumentException, IOException {
+    public Database(int port, InetAddress hostname) throws IllegalArgumentException {
         this(port, hostname, DEFAULT_TIMEOUT);
     }
 
-    public Database(int port, InetAddress hostname, int timeout) throws IllegalArgumentException, IOException {
-        this(port, hostname, timeout, DatabaseConnectionPool.DEFAULT_POOL_SIZE);
-    }
-
-    public Database(int port, InetAddress hostname, int timeout, int poolsize) throws IllegalArgumentException, IOException {
+    public Database(int port, InetAddress hostname, int timeout) throws IllegalArgumentException {
         this.setTimeout(timeout);
         this.address = new InetSocketAddress(hostname, port);
-        this.connectionPool = new DatabaseConnectionPool(this.address, poolsize);
     }
 
     public void setTimeout(int timeout) throws IllegalArgumentException {
@@ -40,17 +36,19 @@ public class Database {
         this.timeout = timeout;
     }
 
-    public DatabaseResponse ExecuteQuery(Query query) throws InterruptedException, IOException {
+    public DatabaseResponse ExecuteQuery(Query query) throws IOException {
         return ExecuteAleatoryQuery(query.build());
     }
 
-    public DatabaseResponse ExecuteAleatoryQuery(String query) throws InterruptedException, IOException {
-        var socket = this.connectionPool.getConnection();
+    public DatabaseResponse ExecuteAleatoryQuery(String query) throws IOException {
+        var socket = new Socket();
+        socket.connect(this.address, this.timeout);
         var databaseInputStream = new DataOutputStream(socket.getOutputStream());
         var databaseOutputStream = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        System.out.println("sending query: " + query);
         databaseInputStream.writeBytes(query);
         var response = readResponse(databaseOutputStream);
-        this.connectionPool.releaseConnection(socket);
+        socket.close();
         return response;
     }
 
@@ -60,6 +58,7 @@ public class Database {
         while ((line = buffer.readLine()) != null) {
             responseBuilder.append(line);
         }
+        System.out.println("response: " + responseBuilder.toString());
         return new DatabaseResponse(responseBuilder.toString());
     }
 }

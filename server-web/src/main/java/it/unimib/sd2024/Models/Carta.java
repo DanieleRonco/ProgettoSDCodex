@@ -8,6 +8,8 @@ public class Carta {
     private String nome;
     private String cognome;
 
+    public Carta(){}
+
     // costruttori
     public Carta(String numero, String scadenza, String cvv, String nome, String cognome){
         setNumero(numero);

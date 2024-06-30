@@ -6,10 +6,11 @@ public class Registrazione {
     // attributi privati
     private String dominioNome;
     private String dominioTLD;
-    @JsonbTransient
     private String utenteEmail;
     private String registrationDate;
     private String expirationDate;
+
+    public Registrazione(){}
 
     // costruttori
     public Registrazione(String dominioNome, String dominioTLD, String utenteEmail, String registrationDate, String expirationDate){

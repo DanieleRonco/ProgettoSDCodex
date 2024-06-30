@@ -1,17 +1,10 @@
 package it.unimib.sd2024.Models;
 
-import jakarta.json.bind.annotation.JsonbTransient;
-import jakarta.json.bind.annotation.JsonbProperty;
-
 public class Utente {
     // attributi privati
-    @JsonbProperty
     private String nome;
-    @JsonbProperty
     private String cognome;
-    @JsonbProperty
     private String email;
-    @JsonbProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
 
     public Utente(){
@@ -35,6 +28,8 @@ public class Utente {
     public String getEmail(){
         return this.email;
     }
+
+    //@JsonbTransient
     public String getPassword(){
         return this.password;
     }
@@ -49,6 +44,7 @@ public class Utente {
     public void setEmail(String email){
         this.email = email;
     }
+
     public void setPassword(String password){
         this.password = password;
     }

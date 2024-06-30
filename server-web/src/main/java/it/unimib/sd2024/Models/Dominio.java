@@ -5,7 +5,9 @@ public class Dominio {
     private String nome;
     private String TLD;
     private String stato;
-    
+
+    public Dominio(){}
+
     // costruttori
     public Dominio(String nome, String TLD, String stato){
         setNome(nome);

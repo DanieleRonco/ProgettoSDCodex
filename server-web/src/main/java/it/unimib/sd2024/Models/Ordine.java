@@ -1,21 +1,20 @@
 package it.unimib.sd2024.Models;
 
-import jakarta.json.bind.annotation.JsonbTransient;
 
 public class Ordine {
     // attributi privati
     private String dominioNome;
     private String dominioTLD;
-    @JsonbTransient
     private String utenteEmail;
-    @JsonbTransient
     private String numeroCarta;
     private String data;
     private String oggetto;
-    private float quota;
+    private Double quota;
+
+    public Ordine(){}
 
     // costruttori
-    public Ordine(String dominioNome, String dominioTLD, String utenteEmail, String numeroCarta, String data, String oggetto, float quota){
+    public Ordine(String dominioNome, String dominioTLD, String utenteEmail, String numeroCarta, String data, String oggetto, Double quota){
         this.setDominioNome(dominioNome);
         this.setDominioTLD(dominioTLD);
         this.setUtenteEmail(utenteEmail);
@@ -44,7 +43,7 @@ public class Ordine {
     public String getOggetto(){
         return this.oggetto;
     }
-    public float getQuota(){
+    public Double getQuota(){
         return this.quota;
     }
 
@@ -67,7 +66,7 @@ public class Ordine {
     public void setOggetto(String oggetto){
         this.oggetto = oggetto;
     }
-    public void setQuota(float quota){
+    public void setQuota(Double quota){
         this.quota = quota;
     }
 }

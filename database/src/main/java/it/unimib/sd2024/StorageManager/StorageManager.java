@@ -4,23 +4,24 @@ import it.unimib.sd2024.Server.Filter;
 
 import javax.json.Json;
 import javax.json.JsonObject;
-import java.io.*;
+import javax.json.JsonValue;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.StringReader;
+import java.lang.reflect.Type;
+import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Scanner;
-import java.util.concurrent.BrokenBarrierException;
-import java.util.concurrent.Semaphore;
+import java.util.*;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 
 public class StorageManager {
     private static final char[] ILLEGAL_CHARACTERS = {'/', '\n', '\r', '\t', '\0', '\f', '`', '?', '*', '\\', '<', '>', '|', '\"', ':'};
-    private final Path pathToStorageDir;
-    private final HashMap<String, Semaphore> readLocks;
-    private final HashMap<String, Semaphore> writeLocks;
+    private final HashMap<String, ReentrantReadWriteLock> locks = new HashMap<>();
+    private Path pathToStorageDir = Paths.get("collections").toAbsolutePath();
 
     public StorageManager() throws IOException {
         this(Paths.get("collections").toAbsolutePath().toString());
@@ -28,251 +29,415 @@ public class StorageManager {
 
     public StorageManager(String pathToStorageDir) throws IOException {
         this.pathToStorageDir = Files.createDirectories(Paths.get(pathToStorageDir));
-        this.readLocks = new HashMap<>();
-        this.writeLocks = new HashMap<>();
-    }
-
-    public Path getPathToStorageDir() {
-        return pathToStorageDir;
-    }
-
-    private boolean isValidCollectionName(String collectionName) {
-        if (collectionName.isEmpty() || collectionName.length() > 100) {
-            return false;
-        }
-        for (char c : ILLEGAL_CHARACTERS) {
-            if (collectionName.indexOf(c) != -1) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private void lockRead(String collection) throws InterruptedException, BrokenBarrierException {
-//        if there is a write operation wait for it
-        if (writeLocks.containsKey(collection)) {
-            writeLocks.get(collection).acquire();
-        }
-
-        if (!readLocks.containsKey(collection)) {
-            var s = new Semaphore(1);
-            s.acquire();
-            readLocks.put(collection, s);
-        }else{
-            readLocks.get(collection).acquire();
-        }
-    }
-
-    private void unlockRead(String collection) {
-        readLocks.get(collection).release();
-        if (writeLocks.containsKey(collection))
-            writeLocks.get(collection).release();
-    }
-
-    private void lockWrite(String collection) throws InterruptedException, BrokenBarrierException {
-//        if there is a write operation wait for it
-        if (writeLocks.containsKey(collection)) {
-            System.out.println("there is a write lock, waiting...");
-            writeLocks.get(collection).acquire();
-            System.out.println("acquired write lock");
-        }
-        if (readLocks.containsKey(collection)) {
-            System.out.println("there is a write lock, waiting...");
-            readLocks.get(collection).acquire();
-            System.out.println("acquired read lock");
-        }
-
-        if (!writeLocks.containsKey(collection)) {
-            var s = new Semaphore(1);
-            s.acquire();
-            writeLocks.put(collection, s);
-        }
-    }
-
-    private void unlockWrite(String collection) {
-        writeLocks.get(collection).release();
-        System.out.println("released write lock");
-        if (readLocks.containsKey(collection)) {
-            readLocks.get(collection).release();
-            System.out.println("released read lock");
-        }
-    }
-
-    public void createNewCollectionStorage(String collectionName) throws IOException, InvalidCollectionName {
-        if (!isValidCollectionName(collectionName)) {
-            throw new InvalidCollectionName();
-        }
-
-        try {
-            lockWrite(collectionName);
-            Files.createFile(getCollectionPath(collectionName));
-        } catch (InterruptedException | BrokenBarrierException e) {
-            throw new RuntimeException(e);
-        } finally {
-            unlockWrite(collectionName);
-        }
-    }
-
-    public void deleteCollectionStorage(String collectionName) throws IOException, InvalidCollectionName {
-        if (!isValidCollectionName(collectionName)) {
-            throw new InvalidCollectionName();
-        }
-
-        try {
-            lockWrite(collectionName);
-            System.out.println("acquired write lock, deleting collection");
-            Files.delete(getCollectionPath(collectionName));
-        } catch (InterruptedException | BrokenBarrierException e) {
-            throw new RuntimeException(e);
-        } finally {
-            unlockWrite(collectionName);
-            System.out.println("released write lock");
-        }
-    }
-
-    /*
-     * TODO:
-     *  CHECK https://stackoverflow.com/questions/5999100/is-there-a-block-until-condition-becomes-true-function-in-java
-     * serve per gestire i lock, usa la wait perché sti lock non mi tornano
-     * creare una collection non ha locks
-     * cancellare una collezione deve guardare se in quel momento é in fase di lettura o scrittura
-     *
-     * filtra deve aspettare che non ci siano scritture in corso ma ci possono essere lettura
-     * la scrittura deve aspettare che non ci siano scritture o letture in corso perché potrebbe creare problemi con i buffers
-     *
-     * l'update prima legge le collezioni, il controller fa le modifiche, cancella le risorse definite (per id) e poi le
-     * riscrive, altrimenti ci sono problemi di concorrenza
-     * */
-
-    public boolean doesCollectionExist(String collectionName) throws InvalidCollectionName {
-        if (!isValidCollectionName(collectionName)) {
-            throw new InvalidCollectionName();
-        }
-        return Files.exists(getCollectionPath(collectionName));
-    }
-
-    public Scanner OpenReaderCollectionStorage(String collectionName) throws IOException, InvalidCollectionName {
-        if (!isValidCollectionName(collectionName)) {
-            throw new InvalidCollectionName();
-        }
-        return new Scanner(getCollectionPath(collectionName).toFile());
-    }
-
-    public List<JsonObject> filterCollection(String collection, List<Filter> filters) throws InvalidCollectionName, IOException {
-        if (!isValidCollectionName(collection)) {
-            throw new InvalidCollectionName();
-        }
-
-        try {
-            lockRead(collection);
-            System.out.println("acquired read lock, filtering now");
-            var result = new ArrayList<JsonObject>();
-            var s = new Scanner(getCollectionPath(collection).toFile());
-
-            while (s.hasNext()) {
-                var line = s.nextLine();
-                var json = Json.createReader(new StringReader(line)).readObject();
-                boolean matches = false;
-                if (filters == null) {
-                    result.add(json);
-                    continue;
-                }
-
-                for (var filter : filters) {
-                    try {
-                        var val = json.get(filter.getKey());
-                        if (val == null) {
-                            //TODO: should check what to do with a null value
-                            break;
-                        }
-
-                        var filterValueType = filter.getValueType();
-                        if (filterValueType == String.class) {
-                            matches = switch (filter.getComparison()) {
-                                case "GREATER_THAN" -> val.toString().compareTo(filter.getValue().toString()) > 0;
-                                case "GREATER_THAN_OR_EQUAL" ->
-                                        val.toString().compareTo(filter.getValue().toString()) >= 0;
-                                case "LESS_THAN" -> val.toString().compareTo(filter.getValue().toString()) < 0;
-                                case "LESS_THAN_OR_EQUAL" ->
-                                        val.toString().compareTo(filter.getValue().toString()) <= 0;
-                                case "NOT_EQUALS" -> !val.toString().equals(filter.getValue());
-                                default -> val.toString().equals(filter.getValue());
-                            };
-                        } else if (filterValueType == Integer.class) {
-                            matches = switch (filter.getComparison()) {
-                                case "GREATER_THAN" ->
-                                        Integer.parseInt(val.toString()) > Integer.parseInt(filter.getValue().toString());
-                                case "GREATER_THAN_OR_EQUAL" ->
-                                        Integer.parseInt(val.toString()) >= Integer.parseInt(filter.getValue().toString());
-                                case "LESS_THAN" ->
-                                        Integer.parseInt(val.toString()) < Integer.parseInt(filter.getValue().toString());
-                                case "LESS_THAN_OR_EQUAL" ->
-                                        Integer.parseInt(val.toString()) <= Integer.parseInt(filter.getValue().toString());
-                                case "NOT_EQUALS" ->
-                                        Integer.parseInt(val.toString()) != Integer.parseInt(filter.getValue().toString());
-                                default -> val.toString().equals(filter.getValue());
-                            };
-                        } else if (filterValueType == Boolean.class) {
-                            if (filter.getComparison().equals("NOT_EQUALS")) {
-                                matches = !val.toString().equals(filter.getValue());
-                            } else {
-                                matches = val.toString().equals(filter.getValue());
-                            }
-                        }
-                    } catch (Exception e) {
-                        break;
-                    }
-                }
-
-                if (matches) {
-                    result.add(json);
-                }
-            }
-
-            System.out.println("sleeping 2 sec to simulate READ");
-            Thread.sleep(2000);
-            return result;
-
-        } catch (BrokenBarrierException | InterruptedException e) {
-            throw new RuntimeException(e);
-        } finally {
-            unlockRead(collection);
-            System.out.println("released read lock");
-        }
-    }
-
-    public Writer OpenWriterCollectionStorage(String collectionName) throws IOException, InvalidCollectionName {
-        if (!isValidCollectionName(collectionName)) {
-            throw new InvalidCollectionName();
-        }
-        return Files.newBufferedWriter(Paths.get(pathToStorageDir.toString(), collectionName + ".json"));
     }
 
     private Path getCollectionPath(String collection) {
         return Paths.get(pathToStorageDir.toString(), collection + ".json");
     }
 
-    public synchronized void appendToCollection(String collection, JsonObject newDocument) throws IOException, InvalidCollectionName {
+    private boolean isValidCollectionName(String collection) {
+        if (collection.isEmpty() || collection.length() > 100) {
+            return false;
+        }
+        for (char c : ILLEGAL_CHARACTERS) {
+            if (collection.indexOf(c) != -1) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private int countLinesInCollection(String collection) throws IOException, InvalidCollectionName {
         if (!isValidCollectionName(collection)) {
             throw new InvalidCollectionName();
         }
 
+        locks.putIfAbsent(collection, new ReentrantReadWriteLock());
+
+        try {
+            locks.get(collection).readLock().lock();
+            var s = new Scanner(getCollectionPath(collection).toFile());
+            int count = 0;
+            while (s.hasNext()) {
+                s.nextLine();
+                count++;
+            }
+            return count--; //last line is empty
+        } finally {
+            locks.get(collection).readLock().unlock();
+        }
+    }
+
+    public void createCollectionStorage(String collection) throws IOException, InvalidCollectionName {
+        if (!isValidCollectionName(collection)) {
+            throw new InvalidCollectionName();
+        }
+
+        locks.putIfAbsent(collection, new ReentrantReadWriteLock());
+
+        try {
+            locks.get(collection).writeLock().lock();
+            Files.createFile(getCollectionPath(collection));
+        } finally {
+            locks.get(collection).writeLock().unlock();
+        }
+    }
+
+    public int deleteCollectionStorage(String collection) throws IOException, InvalidCollectionName {
+        if (!isValidCollectionName(collection)) {
+            throw new InvalidCollectionName();
+        }
+
+        locks.putIfAbsent(collection, new ReentrantReadWriteLock());
+
+        try {
+            locks.get(collection).writeLock().lock();
+            int documentCount = countLinesInCollection(collection);
+            Files.delete(getCollectionPath(collection));
+            return documentCount;
+        } finally {
+            locks.get(collection).writeLock().unlock();
+        }
+    }
+
+    public boolean doesCollectionExist(String collection) throws InvalidCollectionName {
+        if (!isValidCollectionName(collection)) {
+            throw new InvalidCollectionName();
+        }
+        return Files.exists(getCollectionPath(collection));
+    }
+
+    private boolean doesFilterMatch(JsonObject document, String key, Object value, Type valueType, String comparison) {
+        try {
+            var documentValueForKey = document.get(key);
+            if (documentValueForKey == null || documentValueForKey.getValueType() == JsonValue.ValueType.NULL) {
+                if (valueType == null) {
+                    return comparison.equals("EQUALS");
+                }
+                return false;
+            }
+        } catch (NullPointerException e) {
+            return false;
+        }
+
+        Object documentValueForKey = null;
+        Type documentType = null;
+        switch (document.get(key).getValueType()) {
+            case STRING:
+                documentValueForKey = document.getString(key);
+                documentType = String.class;
+                break;
+            case NUMBER:
+                documentValueForKey = document.getJsonNumber(key).bigDecimalValue();
+                documentType = BigDecimal.class;
+                break;
+            case TRUE:
+                documentValueForKey = true;
+                documentType = Boolean.class;
+                break;
+            case FALSE:
+                documentValueForKey = false;
+                documentType = Boolean.class;
+                break;
+            default:
+//                todo: check this case better
+//                for now we are unable to handle
+//                types that are not string, number, boolean or null
+                return false;
+        }
+
+        if (valueType != documentType) {
+            return false;
+        }
+
+        if (valueType == String.class) {
+            final int compareTo = documentValueForKey.toString().compareTo(value.toString());
+            final boolean equals = documentValueForKey.toString().equals(value.toString());
+            return switch (comparison) {
+                case "GREATER_THAN" -> compareTo > 0;
+                case "GREATER_THAN_OR_EQUAL" -> compareTo >= 0;
+                case "LESS_THAN" -> compareTo < 0;
+                case "LESS_THAN_OR_EQUAL" -> compareTo <= 0;
+                case "NOT_EQUALS" -> !equals;
+                default -> equals;
+            };
+        } else if (valueType == BigDecimal.class) {
+            final int compareTo = new BigDecimal(documentValueForKey.toString()).compareTo(new BigDecimal(value.toString()));
+            return switch (comparison) {
+                case "GREATER_THAN" -> compareTo > 0;
+                case "GREATER_THAN_OR_EQUAL" -> compareTo >= 0;
+                case "LESS_THAN" -> compareTo < 0;
+                case "LESS_THAN_OR_EQUAL" -> compareTo <= 0;
+                case "NOT_EQUALS" -> compareTo != 0;
+                default -> compareTo == 0;
+            };
+        } else {
+            if (comparison.equals("NOT_EQUALS")) {
+                return !documentValueForKey.toString().equals(value);
+            } else {
+                return documentValueForKey.toString().equals(value);
+            }
+        }
+    }
+
+    private boolean traverseObject(JsonObject document, List<String> keys, Object filterValue, Type filterValueType, String comparison) {
+        var currentKey = keys.getFirst();
+        keys.removeFirst();
+        if (document == null) {
+            return false;
+        }
+
+        if (document.get(currentKey) == null)
+            return doesFilterMatch(document, currentKey, filterValue, filterValueType, comparison);
+        var valueType = document.get(currentKey).getValueType();
+
+        if (keys.isEmpty()) {
+            return doesFilterMatch(document, currentKey, filterValue, filterValueType, comparison);
+        } else {
+            if (valueType != JsonValue.ValueType.OBJECT)
+                return false;
+            return traverseObject(document.getJsonObject(currentKey), keys, filterValue, filterValueType, comparison);
+        }
+    }
+
+    public List<JsonObject> filterDocuments(String collection, java.util.List<Filter> filters) throws InvalidCollectionName, IOException {
+        if (!isValidCollectionName(collection)) {
+            throw new InvalidCollectionName();
+        }
+
+        locks.putIfAbsent(collection, new ReentrantReadWriteLock());
+
+        try {
+            locks.get(collection).readLock().lock();
+            var result = new ArrayList<JsonObject>();
+            var s = new Scanner(getCollectionPath(collection).toFile());
+
+            while (s.hasNext()) {
+                var line = s.nextLine();
+                line = line.trim();
+                if (line.isEmpty() || line.equals("\n")) {
+                    continue;
+                }
+                var document = Json.createReader(new StringReader(line)).readObject();
+
+                boolean matches = false;
+                if (filters == null) {
+                    result.add(document);
+                    continue;
+                }
+
+                for (var filter : filters) {
+                    var filterKey = new ArrayList<>(Arrays.asList(filter.getKey().split("\\.")));
+                    var filterComparison = filter.getComparison();
+                    var filterValue = filter.getValue();
+                    var filterValueType = filter.getValueType();
+
+                    matches = traverseObject(document, filterKey, filterValue, filterValueType, filterComparison);
+                    if (!matches) {
+                        break;
+                    }
+                }
+
+                if (matches) {
+                    result.add(document);
+                }
+            }
+            return result;
+        } finally {
+            locks.get(collection).readLock().unlock();
+        }
+    }
+
+    public void appendDocumentToCollection(String collection, JsonObject newDocument) throws IOException, InvalidCollectionName {
+        if (!isValidCollectionName(collection)) {
+            throw new InvalidCollectionName();
+        }
+
+        locks.putIfAbsent(collection, new ReentrantReadWriteLock());
+
         FileWriter fr = null;
         try {
-            System.out.println("waiting write lock....");
-            lockWrite(collection);
-            System.out.println("acquired write lock");
+            locks.get(collection).writeLock().lock();
             File f = new File(getCollectionPath(collection).toString());
             fr = new FileWriter(f, true);
             fr.write(newDocument.toString() + "\n");
-            System.out.println("sleeping 2 sec to simulate write");
-            Thread.sleep(2000);
-        } catch (InterruptedException | BrokenBarrierException e) {
-            throw new RuntimeException(e);
         } finally {
             if (fr != null)
                 fr.close();
-            unlockWrite(collection);
+            locks.get(collection).writeLock().unlock();
+        }
+    }
+
+    public void deleteDocuments(String collection, List<String> documentIDs) throws InvalidCollectionName, IOException {
+        if (!isValidCollectionName(collection)) {
+            throw new InvalidCollectionName();
+        }
+
+        locks.putIfAbsent(collection, new ReentrantReadWriteLock());
+
+        try {
+            locks.get(collection).writeLock().lock();
+            var s = new Scanner(getCollectionPath(collection).toFile());
+            var tempFile = File.createTempFile("temp", ".json");
+            var fw = new FileWriter(tempFile);
+            while (s.hasNext()) {
+                var line = s.nextLine();
+                var json = Json.createReader(new StringReader(line)).readObject();
+                var currentDocumentID = json.getString("_id");
+                if (!documentIDs.contains(currentDocumentID)) {
+                    fw.write(json + "\n");
+                } else {
+                    documentIDs.remove(currentDocumentID);
+                }
+            }
+            fw.close();
+            s.close();
+            Files.delete(getCollectionPath(collection));
+            Files.move(tempFile.toPath(), getCollectionPath(collection));
+        } finally {
+            locks.get(collection).writeLock().unlock();
         }
     }
 }
+
+/*
+* this was the old filter logic, it was able to not load all the document in memory
+* but has too many limitations (no search in nested objects)
+*
+    public List<JsonObject> filterDocuments(String collection, List<Filter> filters) throws InvalidCollectionName, IOException {
+        if (!isValidCollectionName(collection)) {
+            throw new InvalidCollectionName();
+        }
+
+        locks.putIfAbsent(collection, new ReentrantReadWriteLock());
+
+        try {
+            locks.get(collection).readLock().lock();
+            var result = new ArrayList<JsonObject>();
+            var s = new Scanner(getCollectionPath(collection).toFile());
+
+            while (s.hasNext()) {
+                var line = s.nextLine();
+                line = line.trim();
+                if (line.isEmpty() || line.equals("\n")) {
+                    continue;
+                }
+                var document = Json.createReader(new StringReader(line)).readObject();
+                var parser = Json.createParser(new StringReader(line));
+                boolean matches = false;
+                boolean stopParsing = false;
+                if (filters == null) {
+                    result.add(document);
+                    continue;
+                }
+
+                String key = "";
+                Object value = null;
+                Type valueType = null;
+                while (parser.hasNext() && !stopParsing) {
+                    final JsonParser.Event event = parser.next();
+                    switch (event) {
+                        case KEY_NAME:
+                            key = parser.getString();
+                            break;
+                        case VALUE_STRING:
+                            value = parser.getString();
+                            valueType = String.class;
+                            break;
+                        case VALUE_NUMBER:
+                            value = parser.getBigDecimal();
+                            valueType = BigDecimal.class;
+                            break;
+                        case VALUE_TRUE:
+                            value = true;
+                            valueType = Boolean.class;
+                            break;
+                        case VALUE_FALSE:
+                            value = false;
+                            valueType = Boolean.class;
+                            break;
+                        case START_OBJECT:
+
+                    }
+
+
+                    if (value == null) {
+//                        todo: check what to do when value is null
+                        continue;
+                    }
+
+                    for (var filter : filters) {
+                        var filterKey = filter.getKey();
+                        var filterComparison = filter.getComparison();
+                        var filterValue = filter.getValue();
+                        var filterValueType = filter.getValueType();
+
+                        System.out.println("document key: " + key + " filter key: " + filterKey);
+                        if (key.equals(filterKey)) {
+//                            System.out.println("checking filter: " + filterKey + " " + filterComparison + " " + filterValue + "[" + filterValueType + "]");
+//                            System.out.println("document " + key + " : " + value);
+                            if (valueType != filterValueType) {
+//                                System.out.println("type of value: " + valueType + " type of filter value: " + filterValueType);
+//                                System.out.println("value type does not match");
+                                matches = false;
+                                stopParsing = true;
+                                break;
+                            }
+                            if (filterValueType == String.class) {
+                                matches = switch (filterComparison) {
+                                    case "GREATER_THAN" -> value.toString().compareTo(filterValue.toString()) > 0;
+                                    case "GREATER_THAN_OR_EQUAL" ->
+                                            value.toString().compareTo(filterValue.toString()) >= 0;
+                                    case "LESS_THAN" -> value.toString().compareTo(filterValue.toString()) < 0;
+                                    case "LESS_THAN_OR_EQUAL" ->
+                                            value.toString().compareTo(filterValue.toString()) <= 0;
+                                    case "NOT_EQUALS" -> !value.toString().equals(filterValue.toString());
+                                    default -> value.toString().equals(filterValue.toString());
+                                };
+                            } else if (filterValueType == BigDecimal.class) {
+                                matches = switch (filter.getComparison()) {
+                                    case "GREATER_THAN" ->
+                                            new BigDecimal(value.toString()).compareTo(new BigDecimal(filter.getValue().toString())) > 0;
+                                    case "GREATER_THAN_OR_EQUAL" ->
+                                            new BigDecimal(value.toString()).compareTo(new BigDecimal(filter.getValue().toString())) >= 0;
+                                    case "LESS_THAN" ->
+                                            new BigDecimal(value.toString()).compareTo(new BigDecimal(filter.getValue().toString())) < 0;
+                                    case "LESS_THAN_OR_EQUAL" ->
+                                            new BigDecimal(value.toString()).compareTo(new BigDecimal(filter.getValue().toString())) <= 0;
+                                    case "NOT_EQUALS" ->
+                                            new BigDecimal(value.toString()).compareTo(new BigDecimal(filter.getValue().toString())) != 0;
+                                    default ->
+                                            new BigDecimal(value.toString()).compareTo(new BigDecimal(filter.getValue().toString())) == 0;
+                                };
+                            } else if (filterValueType == Boolean.class) {
+                                if (filter.getComparison().equals("NOT_EQUALS")) {
+                                    matches = !value.toString().equals(filter.getValue());
+                                } else {
+                                    matches = value.toString().equals(filter.getValue());
+                                }
+                            }
+
+//                          in the V1 of the protocol the only supported
+//                          filter concatenation means an AND operation
+                            if (!matches) {
+                                stopParsing = true;
+                                break;
+                            }
+                        }
+                    }
+                    value = null;
+                }
+
+                if (matches) {
+//                    System.out.println(document.getString("_id") + " matches");
+                    result.add(document);
+                }
+                parser.close();
+            }
+            return result;
+        } finally {
+            locks.get(collection).readLock().unlock();
+        }
+    }
+
+* */

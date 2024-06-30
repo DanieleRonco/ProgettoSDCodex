@@ -1,15 +1,19 @@
 package it.unimib.sd2024.Server;
 
+import java.lang.reflect.Type;
+
 public class UpdateDefinition {
     private String key;
-    private String value;
+    private Object value;
+    private Type valueType;
 
     public UpdateDefinition() {
     }
 
-    public UpdateDefinition(String key, String value) {
+    public UpdateDefinition(String key, Object value, Type valueType) {
         this.key = key;
         this.value = value;
+        this.valueType = valueType;
     }
 
     public String getKey() {
@@ -20,8 +24,12 @@ public class UpdateDefinition {
         this.key = key;
     }
 
-    public String getValue() {
+    public Object getValue() {
         return value;
+    }
+
+    public Type getValueType() {
+        return valueType;
     }
 
     public void setValue(String value) {

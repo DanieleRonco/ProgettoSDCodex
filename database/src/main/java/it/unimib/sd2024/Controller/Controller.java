@@ -3,12 +3,16 @@ package it.unimib.sd2024.Controller;
 import it.unimib.sd2024.Logger.Logger;
 import it.unimib.sd2024.Server.Filter;
 import it.unimib.sd2024.Server.Request;
+import it.unimib.sd2024.Server.UpdateDefinition;
 import it.unimib.sd2024.StorageManager.InvalidCollectionName;
 import it.unimib.sd2024.StorageManager.StorageManager;
 
 import javax.json.Json;
 import javax.json.JsonObject;
+import javax.json.JsonObjectBuilder;
+import javax.json.JsonValue;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.NoSuchFileException;
 import java.util.ArrayList;
@@ -17,11 +21,11 @@ import java.util.UUID;
 
 public class Controller {
     private final Logger log;
-    private final StorageManager storageManager;
+    private StorageManager storageManager;
 
-    public Controller(Logger log) throws IOException {
+    public Controller(Logger log, StorageManager s) throws IOException {
         this.log = log;
-        this.storageManager = new StorageManager();
+        this.storageManager = s;
     }
 
     private String generateNewId() {
@@ -88,15 +92,12 @@ public class Controller {
         return switch (QueryOperationType.valueOf(request.getOperation())) {
             case QueryOperationType.PING -> handlePingQuery();
             case QueryOperationType.CREATE -> handleCreateQuery(request);
-            case QueryOperationType.DROP -> dropCollection(request.getCollectionName());
-            case QueryOperationType.INSERT -> insertDocument(request.getCollectionName(), request.getDocument());
-            case QueryOperationType.FIND -> findDocument(request.getCollectionName(), request.getFilters());
-//                return updateDocument(request.getCollectionName(), request.getFilters(), request.getUpdates());
-//                return deleteDocument(request.getCollectionName(), request.getFilters());
-            default -> new Response()
-                    .setError(true)
-                    .setErrorKind(ErrorKindType.INVALID_REQUEST)
-                    .setMessage("operation not supported, check documentation for supported operations");
+            case QueryOperationType.DROP -> handleDropQuery(request.getCollectionName());
+            case QueryOperationType.INSERT -> handleInsertQuery(request.getCollectionName(), request.getDocument());
+            case QueryOperationType.FIND -> handleFindQuery(request.getCollectionName(), request.getFilters());
+            case QueryOperationType.UPDATE ->
+                    handleUpdateQuery(request.getCollectionName(), request.getFilters(), request.getUpdates());
+            case QueryOperationType.DELETE -> handleDeleteQuery(request.getCollectionName(), request.getFilters());
         };
     }
 
@@ -110,7 +111,7 @@ public class Controller {
     public Response handleCreateQuery(Request req) {
         log.Info("handle create query");
         try {
-            storageManager.createNewCollectionStorage(req.getCollectionName());
+            storageManager.createCollectionStorage(req.getCollectionName());
         } catch (FileAlreadyExistsException e) {
             log.Info("collection already exists: " + e);
             return new Response()
@@ -135,10 +136,12 @@ public class Controller {
         return response;
     }
 
-    public Response dropCollection(String collectionName) {
+    public Response handleDropQuery(String collectionName) {
         log.Info("handle drop query");
+        int deletedDocuments = 0;
         try {
-            storageManager.deleteCollectionStorage(collectionName);
+            deletedDocuments = storageManager.deleteCollectionStorage(collectionName);
+            log.Debug("done dropping collection storage, deleted " + deletedDocuments + " documents");
         } catch (InvalidCollectionName e) {
             log.Info("invalid collection name: " + e);
             return new Response()
@@ -158,12 +161,16 @@ public class Controller {
                     .setErrorKind(ErrorKindType.INTERNAL_ERROR)
                     .setMessage("error dropping collection storage: " + e);
         }
-        var response = new Response().setMessage("collection [" + collectionName + "] dropped");
+
+        var response = new Response()
+                .setMessage("collection [" + collectionName + "] dropped")
+                .setDetectedDocumentsCount(deletedDocuments)
+                .setAffectedDocumentsCount(deletedDocuments);
         log.Debug("drop query handled successfully");
         return response;
     }
 
-    public Response insertDocument(String collectionName, JsonObject document) {
+    public Response handleInsertQuery(String collectionName, JsonObject document) {
         log.Info("handle insert query");
         var collectionExists = checkIfCollectionExists(collectionName);
         if (collectionExists != null) {
@@ -196,8 +203,8 @@ public class Controller {
             if (!isDocumentIdGenerated) {
                 log.Debug("checking if document with id [" + documentId + "] already exists in collection [" + collectionName + "]");
                 var checkByIdFilter = new ArrayList<Filter>();
-                checkByIdFilter.add(new Filter("EQUAL", "_id", documentId));
-                var documents = storageManager.filterCollection(collectionName, checkByIdFilter);
+                checkByIdFilter.add(new Filter("EQUAL", "_id", documentId, String.class));
+                var documents = storageManager.filterDocuments(collectionName, checkByIdFilter);
                 if (!documents.isEmpty()) {
                     log.Info("document with id [" + documentId + "] already exists in collection [" + collectionName + "]");
                     return new Response()
@@ -208,7 +215,7 @@ public class Controller {
                 }
             }
             log.Debug("attempt to append document to collection");
-            storageManager.appendToCollection(collectionName, builder.build());
+            storageManager.appendDocumentToCollection(collectionName, builder.build());
             log.Debug("done writing to collection");
         } catch (IOException | InvalidCollectionName e) {
             log.Error("error inserting document into collection: " + e);
@@ -218,12 +225,14 @@ public class Controller {
                     .setMessage("error inserting document into collection: " + e);
         }
 
-        var response = new Response().setMessage("inserted document into collection [" + collectionName + "]");
+        var response = new Response()
+                .setMessage("inserted document into collection [" + collectionName + "]")
+                .setAffectedDocumentsCount(1);
         log.Debug("insert query handled successfully");
         return response;
     }
 
-    private Response findDocument(String collectionName, List<Filter> filters) {
+    private Response handleFindQuery(String collectionName, List<Filter> filters) {
         log.Info("handle find query");
         var collectionExists = checkIfCollectionExists(collectionName);
         if (collectionExists != null) {
@@ -231,16 +240,100 @@ public class Controller {
         }
 
         try {
-            var documents = storageManager.filterCollection(collectionName, filters);
+            var documents = storageManager.filterDocuments(collectionName, filters);
             String[] docs = new String[documents.size()];
             for (int i = 0; i < documents.size(); i++) {
                 docs[i] = documents.get(i).toString();
             }
-            var response = new Response().setRetrievedDocuments(docs);
+
+            var response = new Response()
+                    .setDetectedDocumentsCount(documents.size())
+                    .setRetrievedDocuments(docs);
             log.Debug("find query handled successfully");
             return response;
         } catch (IOException | InvalidCollectionName e) {
             log.Error("error finding documents in collection: " + e);
+            return new Response()
+                    .setError(true)
+                    .setErrorKind(ErrorKindType.INTERNAL_ERROR)
+                    .setMessage("error finding documents in collection: " + e);
+        }
+    }
+
+    private Response handleUpdateQuery(String collectionName, List<Filter> filters, List<UpdateDefinition> updates) {
+        log.Info("handle update query");
+        var collectionExists = checkIfCollectionExists(collectionName);
+        if (collectionExists != null) {
+            return collectionExists;
+        }
+
+        try {
+            var response = new Response();
+            var documents = storageManager.filterDocuments(collectionName, filters);
+            log.Debug("found " + documents.size() + " documents");
+            response.setDetectedDocumentsCount(documents.size());
+            for (var doc : documents) {
+                log.Debug("updating document: " + doc.getString("_id"));
+                JsonObjectBuilder newDoc = Json.createObjectBuilder(doc);
+                for (var update : updates) {
+                    log.Debug("updating field: " + update.getKey());
+                    if (update.getValueType() == String.class) {
+                        newDoc.add(update.getKey(), Json.createValue(update.getValue().toString()));
+                    } else if (update.getValueType() == BigDecimal.class) {
+                        newDoc.add(update.getKey(), Json.createValue(new BigDecimal(update.getValue().toString())));
+                    } else if (update.getValueType() == Boolean.class) {
+                        var value = update.getValue().toString();
+                        newDoc.add(update.getKey(), value.equals("true") ? JsonValue.TRUE : JsonValue.FALSE);
+                    } else if (update.getValueType() == null) {
+                        newDoc.add(update.getKey(), JsonValue.NULL);
+                    }
+                }
+                documents.set(documents.indexOf(doc), newDoc.build());
+            }
+            //todo: actually count which documents have been updated
+            response.setAffectedDocumentsCount(documents.size());
+            List<String> idsToDelete = new ArrayList<>();
+            for (JsonObject document : documents) {
+                idsToDelete.add(document.getString("_id"));
+            }
+            storageManager.deleteDocuments(collectionName, idsToDelete);
+            for (JsonObject document : documents) {
+                storageManager.appendDocumentToCollection(collectionName, document);
+            }
+            log.Debug("update query handled successfully");
+            return response;
+        } catch (IOException | InvalidCollectionName e) {
+            log.Error("error updating documents in collection: " + e);
+            return new Response()
+                    .setError(true)
+                    .setErrorKind(ErrorKindType.INTERNAL_ERROR)
+                    .setMessage("error finding documents in collection: " + e);
+        }
+    }
+
+    private Response handleDeleteQuery(String collectionName, List<Filter> filters) {
+        log.Info("handle delete query");
+        var collectionExists = checkIfCollectionExists(collectionName);
+        if (collectionExists != null) {
+            return collectionExists;
+        }
+
+        try {
+            var response = new Response();
+            var documents = storageManager.filterDocuments(collectionName, filters);
+            log.Debug("found " + documents.size() + " documents");
+            response.setDetectedDocumentsCount(documents.size());
+
+            response.setAffectedDocumentsCount(documents.size());
+            List<String> idsToDelete = new ArrayList<>();
+            for (JsonObject document : documents) {
+                idsToDelete.add(document.getString("_id"));
+            }
+            storageManager.deleteDocuments(collectionName, idsToDelete);
+            log.Debug("delete query handled successfully");
+            return response;
+        } catch (IOException | InvalidCollectionName e) {
+            log.Error("error deleting documents in collection: " + e);
             return new Response()
                     .setError(true)
                     .setErrorKind(ErrorKindType.INTERNAL_ERROR)

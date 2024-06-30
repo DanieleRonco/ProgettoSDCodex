@@ -13,6 +13,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.math.BigDecimal;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -84,10 +85,18 @@ public class Server {
 
                 JsonbBuilder.create().toJson(controller.handleRequest(req), out);
                 out.flush();
-
-                in.close();
                 out.close();
+                in.close();
+
                 client.close();
+            } catch (InvalidRequest e) {
+                log.Error("invalid request: " + e.getMessage());
+                JsonbBuilder.create().toJson(
+                        new Response()
+                                .setError(true)
+                                .setErrorKind(ErrorKindType.INVALID_REQUEST)
+                                .setMessage("error handling request"),
+                        out);
             } catch (Exception e) {
                 log.Error("error handling request: " + e.getMessage());
                 if (out == null) {
@@ -100,12 +109,13 @@ public class Server {
                                     .setErrorKind(ErrorKindType.INTERNAL_ERROR)
                                     .setMessage("error handling request"),
                             out);
+                }
+                e.printStackTrace();
+            } finally {
+                if (out != null) {
                     out.flush();
                     out.close();
                 }
-
-                e.printStackTrace();
-            } finally {
                 try {
                     client.close();
                 } catch (IOException e) {
@@ -147,13 +157,24 @@ public class Server {
                     req.setDocument(null);
                 }
 
-
                 try {
                     var JsonFilters = jobj.getJsonArray("filter");
                     var filters = new ArrayList<Filter>();
 
                     for (var filter : JsonFilters.getValuesAs(JsonObject.class)) {
-                        filters.add(new Filter(filter.getString("key"), filter.getString("comparison"), filter.getString("value")));
+                        var comparison = filter.getString("comparison");
+                        var key = filter.getString("key");
+                        var valueType = filter.getString("valueType");
+                        Filter f = switch (valueType) {
+                            case "String" -> new Filter(comparison, key, filter.getString("value"), String.class);
+                            case "Number" ->
+                                    new Filter(comparison, key, filter.getJsonNumber("value").bigDecimalValue(), BigDecimal.class);
+                            case "Boolean" -> new Filter(comparison, key, filter.getBoolean("value"), Boolean.class);
+                            case "Null" -> new Filter(comparison, key, null, null);
+                            default -> throw new InvalidRequest("Invalid filter value type: " + valueType);
+                        };
+
+                        filters.add(f);
                     }
                     req.setFilters(filters);
 
@@ -163,12 +184,23 @@ public class Server {
 
                 try {
                     var jsonUpdate = jobj.getJsonArray("update");
-                    var update = new ArrayList<UpdateDefinition>();
+                    var updates = new ArrayList<UpdateDefinition>();
 
-                    for (var filter : jsonUpdate.getValuesAs(JsonObject.class)) {
-                        update.add(new UpdateDefinition(filter.getString("key"), filter.getString("value")));
+                    for (var update : jsonUpdate.getValuesAs(JsonObject.class)) {
+                        var key = update.getString("key");
+                        var valueType = update.getString("valueType");
+
+                        UpdateDefinition u = switch (valueType) {
+                            case "String" -> new UpdateDefinition(key, update.getString("value"), String.class);
+                            case "Number" ->
+                                    new UpdateDefinition(key, update.getJsonNumber("value").bigDecimalValue(), BigDecimal.class);
+                            case "Boolean" -> new UpdateDefinition(key, update.getBoolean("value"), Boolean.class);
+                            case "Null" -> new UpdateDefinition(key, null, null);
+                            default -> throw new InvalidRequest("Invalid update definition value type: " + valueType);
+                        };
+                        updates.add(u);
                     }
-                    req.setUpdates(update);
+                    req.setUpdates(updates);
 
                 } catch (NullPointerException e) {
                     req.setUpdates(null);
@@ -176,7 +208,7 @@ public class Server {
 
                 return req;
             } catch (ClassCastException e) {
-                throw new InvalidRequest("Unable to parse request");
+                throw new InvalidRequest("at least a field has the wrong type");
             }
         }
     }

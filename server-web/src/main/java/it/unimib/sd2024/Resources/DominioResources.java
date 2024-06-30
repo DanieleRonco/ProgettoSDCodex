@@ -246,7 +246,7 @@ public class DominioResources {
             return Response.status(500).build();
 
         // si aggiorna lo stato a 'active'
-        DatabaseResponse rispostaAggiornamentoActive = comunicazioneDatabase.ExecuteQuery(QueryBuilder.V1().UPDATE().setCollection("domains").filter(new Filter().add("nome", nome).add("TLD", TLD)).updateOn(new UpdateDefinition().add("stato", "acquiring")));
+        DatabaseResponse rispostaAggiornamentoActive = comunicazioneDatabase.ExecuteQuery(QueryBuilder.V1().UPDATE().setCollection("domains").filter(new Filter().add("nome", nome).add("TLD", TLD)).updateOn(new UpdateDefinition().add("stato", "active")));
         if (rispostaAggiornamentoActive.isErrorResponse())
             return Response.status(500).build(); // errore
 

@@ -1,4 +1,5 @@
 <html lang="it">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,6 +14,7 @@
             background-color: #f0f0f0;
             font-family: Arial, sans-serif;
         }
+
         .container {
             background-color: #fff;
             padding: 20px;
@@ -21,52 +23,14 @@
             text-align: center;
             width: 80%;
             max-width: 800px;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
             gap: 20px;
             position: relative;
         }
+
         .container h1 {
-            grid-column: span 2;
             margin-bottom: 20px;
         }
-        .container label {
-            display: block;
-            text-align: left;
-            margin-bottom: 5px;
-        }
-        .container input, .container select {
-            width: calc(100% - 20px);
-            padding: 10px;
-            margin-bottom: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            font-size: 16px;
-            box-sizing: border-box;
-        }
-        .grid-left {
-            grid-column: 1 / 2;
-            text-align: left;
-        }
-        .grid-right {
-            grid-column: 2 / 3;
-            text-align: left;
-        }
-        .container button {
-            width: calc(100% - 20px);
-            padding: 10px;
-            border: none;
-            border-radius: 5px;
-            background-color: #007BFF;
-            color: white;
-            font-size: 16px;
-            cursor: pointer;
-            grid-column: span 2;
-            margin-top: 10px;
-        }
-        .container button:hover {
-            background-color: #0056b3;
-        }
+
         .back-link {
             position: absolute;
             top: 20px;
@@ -76,19 +40,97 @@
             cursor: pointer;
             text-decoration: none;
         }
+
         .back-link:hover {
             text-decoration: underline;
         }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th,
+        td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+
+        th {
+            background-color: #007bff35;
+            color: #333;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        tr:hover {
+            background-color: #f1f1f1;
+        }
     </style>
 </head>
+
 <body>
     <a href="main.html" class="back-link">Torna indietro</a>
     <div class="container">
         <h1>Elenco Domini Registrati</h1>
-        <div class="grid-left">
-            <!-- Contenuto per l'elenco dei domini registrati -->
-            <p>Contenuto per l'elenco dei domini registrati.</p>
+        <div id="elenco">
+            <p>Recupero dei domini in corso...</p>
+
         </div>
     </div>
+    <script>
+        window.onload = async () => {
+            const API_URI = "http://localhost:8080";
+
+            console.log("getting domains");
+            const token = localStorage.getItem("token");
+            if (!token) {
+                window.location.href = "index.html";
+            }
+
+            const response = await fetch(`${API_URI}/domain/registered`, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": token
+                }
+            });
+
+            const responseText = await response.text();
+            console.log("response text:", responseText)
+            console.log("response status:", response.status)
+
+            if (response.ok) {
+                const data = JSON.parse(responseText);
+                document.querySelector("#elenco").innerHTML = "";
+
+                const table = document.createElement("table");
+                table.innerHTML = `
+                        <tr>
+                            <th>Nome</th>
+                            <th>Data di Registrazione</th>
+                            <th>Data di Scadenza</th>
+                        </tr>
+                    `;
+                data.forEach(domain => {
+                    table.innerHTML +=
+                        `<tr>
+                        <td>${domain.dominioNome}.${domain.dominioTLD}</td>
+                        <td>${domain.registrationDate}</td>
+                        <td>${domain.expirationDate}</td>
+                        </tr>`;
+                });
+
+                document.querySelector("#elenco").appendChild(table);
+            } else {
+                alert("Errore nel recupero dei domini registrati");
+            }
+        };
+    </script>
 </body>
+
 </html>

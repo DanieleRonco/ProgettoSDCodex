@@ -1,4 +1,5 @@
 <html lang="it">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,6 +14,7 @@
             background-color: #f0f0f0;
             font-family: Arial, sans-serif;
         }
+
         .container {
             background-color: #fff;
             padding: 20px;
@@ -20,9 +22,11 @@
             border-radius: 5px;
             text-align: center;
         }
+
         .container h1 {
             margin-bottom: 20px;
         }
+
         .container input {
             width: 100%;
             padding: 10px;
@@ -30,6 +34,7 @@
             border: 1px solid #ccc;
             border-radius: 5px;
         }
+
         .container button {
             width: 100%;
             padding: 10px;
@@ -39,31 +44,71 @@
             color: white;
             font-size: 16px;
         }
+
         .container button:hover {
             background-color: #0056b3;
         }
+
         .container a {
             display: inline-block;
             margin-top: 20px;
             color: #007BFF;
             text-decoration: none;
         }
+
         .container a:hover {
             text-decoration: underline;
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <h1>Registrazione</h1>
-        <form action="register.php" method="POST">
+        <form>
             <input type="text" name="nome" placeholder="Nome" required>
             <input type="text" name="cognome" placeholder="Cognome" required>
             <input type="email" name="email" placeholder="Email" required>
             <input type="password" name="password" placeholder="Password" required>
-            <button type="submit">Registrati</button>
+            <button type="button">Registrati</button>
         </form>
         <a href="index.html">Hai già un account? Accedi</a>
     </div>
+    <script>
+        window.onload = () => {
+            const API_URI = "http://localhost:8080";
+            const form = document.querySelector("form");
+            const nome = form.querySelector("input[name='nome']");
+            const cognome = form.querySelector("input[name='cognome']");
+            const email = form.querySelector("input[name='email']");
+            const password = form.querySelector("input[name='password']");
+            const button = form.querySelector("button");
+
+            button.onclick = async () => {
+                console.log("register request");
+                const response = await fetch(`${API_URI}/users/register`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        nome: nome.value,
+                        cognome: cognome.value,
+                        email: email.value,
+                        password: password.value
+                    })
+                });
+
+                console.log("response text:", response.text());
+                console.log("response status:", response.status);
+                if (response.ok) {
+                    window.location.href = "main.html";
+                } else {
+                    alert("Credenziali errate");
+                }
+            };
+        }
+    </script>
 </body>
+
 </html>

@@ -1,4 +1,5 @@
 <html lang="it">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,6 +14,7 @@
             background-color: #f0f0f0;
             font-family: Arial, sans-serif;
         }
+
         .container {
             background-color: #fff;
             padding: 20px;
@@ -25,16 +27,20 @@
             grid-template-columns: 1fr 1fr;
             gap: 20px;
         }
+
         .container h1 {
             grid-column: span 2;
             margin-bottom: 20px;
         }
+
         .container label {
             display: block;
             text-align: left;
             margin-bottom: 5px;
         }
-        .container input, .container select {
+
+        .container input,
+        .container select {
             width: calc(100% - 20px);
             padding: 10px;
             margin-bottom: 10px;
@@ -43,14 +49,17 @@
             font-size: 16px;
             box-sizing: border-box;
         }
+
         .grid-left {
             grid-column: 1 / 2;
             text-align: left;
         }
+
         .grid-right {
             grid-column: 2 / 3;
             text-align: left;
         }
+
         .container button {
             width: calc(100% - 20px);
             padding: 10px;
@@ -62,9 +71,11 @@
             cursor: pointer;
             grid-column: span 2;
         }
+
         .container button:hover {
             background-color: #0056b3;
         }
+
         .back-link {
             position: absolute;
             top: 20px;
@@ -74,11 +85,13 @@
             cursor: pointer;
             text-decoration: none;
         }
+
         .back-link:hover {
             text-decoration: underline;
         }
     </style>
 </head>
+
 <body>
     <a href="main.html" class="back-link">Torna indietro</a>
     <div class="container">
@@ -86,7 +99,7 @@
         <div class="grid-left">
             <label for="dominio">Nome del dominio:</label>
             <input type="text" id="dominio" name="nome_dominio" required>
-            
+
             <label for="tld">TLD (Top Level Domain):</label>
             <select id="tld" name="tld" required>
                 <option value="com">com</option>
@@ -97,39 +110,140 @@
                 <option value="mil">mil</option>
                 <option value="int">int</option>
             </select>
-            
+
             <label for="estensione">Estensione rinnovo (anni):</label>
             <input type="number" id="estensione" name="estensione" min="1" max="10" required>
         </div>
         <div class="grid-right">
             <label for="numero_carta">Numero della carta:</label>
             <input type="text" id="numero_carta" name="numero_carta" required>
-            
+
             <label for="scadenza_carta">Scadenza della carta:</label>
-            <input type="text" id="scadenza_carta" name="scadenza_carta" placeholder="MM/AA" required>
-            
+            <input type="text" id="scadenza_carta" name="scadenza_carta" placeholder="MM/AAAA" required>
+
             <label for="cvv_carta">CVV della carta:</label>
             <input type="text" id="cvv_carta" name="cvv_carta" maxlength="3" required>
-            
+
             <label for="intestatario">Nome dell'intestatario:</label>
-            <input type="text" id="intestatario" name="nome_intestatario" required>
+            <input type="text" id="nome_intestatario" name="nome_intestatario" required>
 
             <label for="intestatario">Cognome dell'intestatario:</label>
-            <input type="text" id="intestatario" name="cognome_intestatario" required>
+            <input type="text" id="cognome_intestatario" name="cognome_intestatario" required>
         </div>
-        <button type="submit">Rinnova Dominio</button>
+        <button id="rinnova" type="button">Rinnova Dominio</button>
     </div>
 
     <script>
-        // validazione della data di scadenza della carta
-        document.getElementById('scadenza_carta').addEventListener('input', function() {
-            var input = this.value;
-            if (/^\d{2}\/\d{2}$/.test(input)) {
-                this.setCustomValidity('');
-            } else {
-                this.setCustomValidity('Il formato deve essere MM/YY');
+        const API_URI = "http://localhost:8080";
+
+        //returns true if available and valid, false if not available
+        //and null if the domain is not valid
+        async function isDomainAvailable(domain, tld) {
+            if (domain === "" || tld === "") {
+                return null;
             }
-        });
+            const token = localStorage.getItem("token");
+            if (token === null) {
+                window.location.href = "index.html";
+            }
+            console.log("checking if", domain + "." + tld, "is valid valid and available");
+
+            const response = await fetch(`${API_URI}/domain/available/${domain}/${tld}`,
+                {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": token
+                    }
+                });
+
+            const responseText = await response.text();
+            console.log("response text:", responseText);
+            console.log("status:", response.status);
+            switch (response.status) {
+                case 200:
+                    return responseText === "dominio disponibile";
+                case 400:
+                    if (responseText === "dominio non valido") {
+                        return null;
+                    }
+                    break;
+                case 401:
+                    window.location.href = "index.html";
+                    break;
+                case 500:
+                    alert("Errore interno del server");
+                    break;
+                default:
+                    alert("Errore sconosciuto");
+                    break;
+            }
+            return null;
+        }
+
+        function isValidCartExpiration(expiration) {
+            return (/^\d{2}\/\d{4}$/.test(expiration))
+        }
+
+        window.onload = () => {
+            const dominio = document.querySelector("#dominio");
+            const nome = document.querySelector("#tld");
+            const durata = document.querySelector("#estensione");
+            const numeroCarta = document.querySelector("#numero_carta");
+            const scadenzaCarta = document.querySelector("#scadenza_carta");
+            const ccv = document.querySelector("#cvv_carta");
+            const nomeIntestatario = document.querySelector("#nome_intestatario");
+            const cognomeIntestatario = document.querySelector("#cognome_intestatario");
+            const button = document.querySelector("#rinnova");
+
+            button.onclick = async () => {
+                console.log("renew a domain");
+                if (!isValidCartExpiration(scadenzaCarta.value)) {
+                    alert("Inserire una data di scadenza valida, il formato é MM/YYYY");
+                    return;
+                }
+
+                const token = localStorage.getItem("token");
+                if (token === null) {
+                    window.location.href = "index.html";
+                }
+
+                const response = await fetch(`${API_URI}/domain/renewal/${dominio.value}/${tld.value}`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": token
+                    },
+                    body: JSON.stringify({
+                        tempo: durata.value,
+                        quantita: parseInt(durata.value) * 20, // 20 euro per anno
+                        numero: numeroCarta.value,
+                        scadenza: scadenzaCarta.value,
+                        ccv: ccv.value,
+                        nome: nomeIntestatario.value,
+                        cognome: cognomeIntestatario.value
+                    })
+                });
+
+                const respnseText = await response.text();
+                console.log("response after registration:", responseText);
+                console.log("response status:", response.status);
+                if (response.status === 200) {
+                    alert("Dominio rinnovato con successo");
+                    window.location.href = "main.html";
+                } else if (response.status === 400) {
+                    alert("Il dominio non é mai stato registrato ma é disponibile");
+                } else if (response.status === 401) {
+                    localStorage.removeItem("token");
+                    window.location.href = "index.html";
+                } else if (response.status === 409) {
+                    alert("Dominio non il tuo possesso");
+                } else {
+                    alert("Errore durante la registrazione del dominio");
+                }
+            };
+        }
     </script>
 </body>
+
 </html>

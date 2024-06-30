@@ -6,14 +6,16 @@ public class Filter {
     private String comparison;
     private String key;
     private Object value;
+    private Type valueType;
 
     public Filter() {
     }
 
-    public Filter(String comparison, String key, String value) {
-        this.comparison = comparison;
-        this.key = key;
-        this.value = value;
+    public Filter(String comparison, String key, Object value, Type valueType) {
+        this.setComparison(comparison);
+        this.setKey(key);
+        this.setValue(value);
+        this.setValueType(valueType);
     }
 
     public String getComparison() {
@@ -36,12 +38,16 @@ public class Filter {
         return value;
     }
 
-    public void setValue(String value) {
+    public void setValue(Object value) {
         this.value = value;
     }
 
     public Type getValueType() {
-        return value.getClass();
+        return valueType;
+    }
+
+    private void setValueType(Type valueType) {
+        this.valueType = valueType;
     }
 
     @Override
@@ -50,6 +56,7 @@ public class Filter {
                 "key='" + key + '\'' +
                 ", comparison='" + comparison + '\'' +
                 ", value='" + value + '\'' +
+                ", valueType=" + valueType +
                 '}';
     }
 

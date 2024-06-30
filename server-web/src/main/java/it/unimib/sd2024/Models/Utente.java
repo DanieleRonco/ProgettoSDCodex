@@ -1,14 +1,21 @@
 package it.unimib.sd2024.Models;
 
 import jakarta.json.bind.annotation.JsonbTransient;
+import jakarta.json.bind.annotation.JsonbProperty;
 
 public class Utente {
     // attributi privati
+    @JsonbProperty
     private String nome;
+    @JsonbProperty
     private String cognome;
+    @JsonbProperty
     private String email;
-    @JsonbTransient
+    @JsonbProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
+
+    public Utente(){
+    }
 
     // costruttori
     public Utente(String nome, String cognome, String email, String password){

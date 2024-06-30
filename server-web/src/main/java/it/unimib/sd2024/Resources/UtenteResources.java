@@ -29,6 +29,8 @@ public class UtenteResources {
     static {
         try {
             Database comunicazioneDatabase = new Database();
+            var response = comunicazioneDatabase.ExecuteQuery(QueryBuilder.V1().CREATE("users"));
+
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -47,13 +49,17 @@ public class UtenteResources {
         // 2. si aggiunge l'utente (errore)
         // --------------------------------------------------------------------------
 
-        DatabaseResponse rispostaEmail = comunicazioneDatabase.ExecuteQuery(QueryBuilder.V1().FIND().setCollection("users").filter(new Filter().add("email", utente.getEmail())));
+        DatabaseResponse rispostaEmail = new Database().ExecuteQuery(QueryBuilder.V1().FIND().setCollection("users").filter(new Filter().add("email", utente.getEmail())));
         if(rispostaEmail.isErrorResponse())
             return Response.status(500).build(); // errore
         if(rispostaEmail.getDetectedDocumentsCount() == 1)
             return Response.status(400).entity("email già registrata").build(); // email già registrata
         
-        DatabaseResponse rispostaInserimento = comunicazioneDatabase.ExecuteQuery(QueryBuilder.V1().INSERT().setCollection("users").insert(utente));
+        // MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        // byte[] hash = digest.digest(text.getBytes(StandardCharsets.UTF_8));
+        // utente.setPassword(utente.getPassword())
+
+        DatabaseResponse rispostaInserimento = new Database().ExecuteQuery(QueryBuilder.V1().INSERT().setCollection("users").insert(utente));
         if(rispostaInserimento.isErrorResponse())
             return Response.status(500).build(); // errore
         return Response.status(201).entity("registrazione effettuata").build(); // registrazione effettuata

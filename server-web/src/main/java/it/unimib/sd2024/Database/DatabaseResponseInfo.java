@@ -17,20 +17,40 @@ public class DatabaseResponseInfo {
         return retrievedDocuments;
     }
 
+    public void setRetrievedDocuments(String[] retrievedDocuments) {
+        this.retrievedDocuments = retrievedDocuments;
+    }
+
     public int getDetectedDocumentsCount() {
         return detectedDocumentsCount;
+    }
+
+    public void setDetectedDocumentsCount(int detectedDocumentsCount) {
+        this.detectedDocumentsCount = detectedDocumentsCount;
     }
 
     public int getAffectedDocumentsCount() {
         return affectedDocumentsCount;
     }
 
+    public void setAffectedDocumentsCount(int affectedDocumentsCount) {
+        this.affectedDocumentsCount = affectedDocumentsCount;
+    }
+
     public String getMessage() {
         return message;
     }
 
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
     public boolean isError() {
         return isError;
+    }
+
+    public void setError(boolean error) {
+        isError = error;
     }
 
     @Override
@@ -43,5 +63,13 @@ public class DatabaseResponseInfo {
                 ", detectedDocumentsCount=" + detectedDocumentsCount +
                 ", retrievedDocuments=" + Arrays.toString(retrievedDocuments) +
                 '}';
+    }
+
+    public ErrorKindType getErrorKind() {
+        return errorKind;
+    }
+
+    public void setErrorKind(ErrorKindType errorKind) {
+        this.errorKind = errorKind;
     }
 }

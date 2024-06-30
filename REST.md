@@ -60,7 +60,7 @@
 
 
 
-## `/available/{nome}/{TLD}`
+## `/domain/available/{nome}/{TLD}`
 ### GET
 **Descrizione**: consente di verificare se un Dominio è disponibile, altrimenti restituisce le informazioni dell'Utente possessore del Dominio e la data di scadenza della Registrazione del Dominio.
 
@@ -82,7 +82,7 @@
 
 
 
-## `/registered`
+## `/domain/registered`
 ### GET
 **Descrizione**: consente di ottenere l'elenco di tutti i Domini registrati.
 
@@ -102,7 +102,7 @@
 
 
 
-## `/register/{nome}/{TLD}`
+## `/domain/register/{nome}/{TLD}`
 ### POST
 **Descrizione**: consente la registrazione di un Dominio da parte di un Utente.
 
@@ -126,7 +126,53 @@
 
 
 
-## `/renewal/{nome}/{TLD}`
+## `/domain/lock/{nome}/{TLD}`
+### GET
+**Descrizione**: consente ad un Utente di bloccare l'acquisizione di un Dominio.
+
+**Parametri**: `nome` che rappresenta il nome del Dominio, `TLD` che rappresenta il Top Level Domain del Dominio.
+
+**Header**: `Authorization` per il token di sessione, in aggiunta a quelli già impostati automaticamente.
+
+**Body Richiesta**: nessun contenuto.
+
+**Risposta**: nessun contenuto.
+
+**Codici di Stato Restituiti**:
+
+    200 Ok, quando l'acquisizione di un Dominio viene bloccata.
+
+    400 Bad Request, quando viene indicato un Dominio (nome e TLD) non valido.
+
+    401 Unauthorized, quando l'Utente non ha effettuato l'accesso.
+
+    409 Conflict, quando un Dominio è già in fase di acquisizione.
+
+
+
+## `/domain/unlock/{nome}/{TLD}`
+### GET
+**Descrizione**: consente ad un Utente di rilasciare l'acquisizione di un Dominio.
+
+**Parametri**: `nome` che rappresenta il nome del Dominio, `TLD` che rappresenta il Top Level Domain del Dominio.
+
+**Header**: `Authorization` per il token di sessione, in aggiunta a quelli già impostati automaticamente.
+
+**Body Richiesta**: nessun contenuto.
+
+**Risposta**: nessun contenuto.
+
+**Codici di Stato Restituiti**:
+
+    200 Ok, quando l'acquisizione di un Dominio viene rilasciata.
+
+    400 Bad Request, quando viene indicato un Dominio (nome e TLD) non valido oppure quando il Dominio non è in fase di acquisizione.
+
+    401 Unauthorized, quando l'Utente non ha effettuato l'accesso.
+
+
+
+## `/domain/renewal/{nome}/{TLD}`
 ### POST
 **Descrizione**: consente il rinnovo di un Dominio da parte di un Utente.
 

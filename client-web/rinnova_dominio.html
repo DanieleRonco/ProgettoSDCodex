@@ -225,14 +225,14 @@
                     })
                 });
 
-                const respnseText = await response.text();
+                const responseText = await response.text();
                 console.log("response after registration:", responseText);
                 console.log("response status:", response.status);
                 if (response.status === 200) {
                     alert("Dominio rinnovato con successo");
                     window.location.href = "main.html";
                 } else if (response.status === 400) {
-                    alert("Il dominio non é mai stato registrato ma é disponibile");
+                    alert(responseText);
                 } else if (response.status === 401) {
                     localStorage.removeItem("token");
                     window.location.href = "index.html";

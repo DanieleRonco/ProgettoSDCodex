@@ -46,7 +46,7 @@
 
 **Parametri**: nessun parametro.
 
-**Header**: `Bearer` per il token di sessione, in aggiunta a quelli già impostati automaticamente.
+**Header**: `Authorization` per il token di sessione, in aggiunta a quelli già impostati automaticamente.
 
 **Body Richiesta**: nessun contenuto.
 
@@ -66,7 +66,7 @@
 
 **Parametri**: `nome` che rappresenta il nome del Dominio, `TLD` che rappresenta il Top Level Domain del Dominio.
 
-**Header**: `Bearer` per il token di sessione, in aggiunta a quelli già impostati automaticamente.
+**Header**: `Authorization` per il token di sessione, in aggiunta a quelli già impostati automaticamente.
 
 **Body Richiesta**: nessun contenuto.
 
@@ -88,7 +88,7 @@
 
 **Parametri**: nessun parametro.
 
-**Header**: `Bearer` per il token di sessione, in aggiunta a quelli già impostati automaticamente.
+**Header**: `Authorization` per il token di sessione, in aggiunta a quelli già impostati automaticamente.
 
 **Body Richiesta**: nessun contenuto.
 
@@ -108,7 +108,7 @@
 
 **Parametri**: `nome` che rappresenta il nome del Dominio, `TLD` che rappresenta il Top Level Domain del Dominio.
 
-**Header**: `Content-Type` con il valore `application/json` e `Bearer` per il token di sessione, in aggiunta a quelli già impostati automaticamente.
+**Header**: `Content-Type` con il valore `application/json` e `Authorization` per il token di sessione, in aggiunta a quelli già impostati automaticamente.
 
 **Body Richiesta**: rappresentazione in formato JSON di `durata`, che rappresenta la durata della registrazione del Dominio, `quantita`, che rappresenta la quota pagata per la registrazione del Dominio, di una Carta, con i seguenti campi: `numero`, `scadenza`, `cvv`, `nome intestatario`, `cognome intestatario`.
 
@@ -132,7 +132,7 @@
 
 **Parametri**: `nome` che rappresenta il nome del Dominio, `TLD` che rappresenta il Top Level Domain del Dominio.
 
-**Header**: `Content-Type` con il valore `application/json` e `Bearer` per il token di sessione, in aggiunta a quelli già impostati automaticamente.
+**Header**: `Content-Type` con il valore `application/json` e `Authorization` per il token di sessione, in aggiunta a quelli già impostati automaticamente.
 
 **Body Richiesta**: rappresentazione in formato JSON di `aggiunta`, che rappresenta il tempo di estensione della registrazione del Dominio, `quantita`, che rappresenta la quota pagata per il rinnovo del Dominio, di una Carta, con i seguenti campi: `numero`, `scadenza`, `cvv`, `nome intestatario`, `cognome intestatario`.
 

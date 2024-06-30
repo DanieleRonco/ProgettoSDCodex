@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registrazione Dominio</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 5px;
+            text-align: center;
+            width: 80%;
+            max-width: 800px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .container h1 {
+            grid-column: span 2;
+            margin-bottom: 20px;
+        }
+        .container label {
+            display: block;
+            text-align: left;
+            margin-bottom: 5px;
+        }
+        .container input, .container select {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        .container .grid-left {
+            grid-column: 1 / 2;
+        }
+        .container .grid-right {
+            grid-column: 2 / 3;
+        }
+        .container button {
+            width: calc(100% - 20px);
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            background-color: #007BFF;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .container button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Registrazione Dominio</h1>
+        <div class="grid-left">
+            <label for="dominio">Nome del dominio:</label>
+            <input type="text" id="dominio" name="dominio" required>
+            
+            <label for="tld">TLD (Top Level Domain):</label>
+            <select id="tld" name="tld" required>
+                <option value="com">.com</option>
+                <option value="org">.org</option>
+                <option value="net">.net</option>
+                <option value="edu">.edu</option>
+                <option value="gov">.gov</option>
+                <option value="mil">.mil</option>
+                <option value="int">.int</option>
+            </select>
+            
+            <label for="durata">Durata registrazione (anni):</label>
+            <input type="number" id="durata" name="durata" min="1" max="10" required>
+        </div>
+        <div class="grid-right">
+            <label for="numero_carta">Numero della carta:</label>
+            <input type="text" id="numero_carta" name="numero_carta" required>
+            
+            <label for="scadenza_carta">Scadenza della carta:</label>
+            <input type="text" id="scadenza_carta" name="scadenza_carta" placeholder="MM/AA" required>
+            
+            <label for="cvv_carta">CVV della carta:</label>
+            <input type="text" id="cvv_carta" name="cvv_carta" maxlength="3" required>
+            
+            <label for="intestatario">Nome e cognome dell'intestatario:</label>
+            <input type="text" id="intestatario" name="intestatario" required>
+        </div>
+        <button type="submit">Registra Dominio</button>
+    </div>
+</body>
+</html>

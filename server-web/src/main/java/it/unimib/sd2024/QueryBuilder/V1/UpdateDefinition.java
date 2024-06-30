@@ -3,7 +3,7 @@ package it.unimib.sd2024.QueryBuilder.V1;
 import jakarta.json.bind.JsonbBuilder;
 
 public class UpdateDefinition {
-    private UpdateContent content;
+    private KeyValue content;
     private UpdateDefinition next;
     private UpdateDefinition before;
 
@@ -11,7 +11,7 @@ public class UpdateDefinition {
     }
 
     public UpdateDefinition add(String key, Object value) {
-        this.content = new UpdateContent(key, value);
+        this.content = new KeyValue(key, value);
         this.next = new UpdateDefinition();
         this.next.before = this;
         return this.next;
@@ -27,7 +27,7 @@ public class UpdateDefinition {
         return this;
     }
 
-    private UpdateContent getUpdateContent() {
+    private KeyValue getKeyValue() {
         return this.content;
     }
 
@@ -43,7 +43,7 @@ public class UpdateDefinition {
         }
 
         do {
-            sb.append(JsonbBuilder.create().toJson(current.getUpdateContent(), UpdateContent.class));
+            sb.append(JsonbBuilder.create().toJson(current.getKeyValue(), KeyValue.class));
             current = current.before;
             if (current != null && current.next != null) {
                 sb.append(",");

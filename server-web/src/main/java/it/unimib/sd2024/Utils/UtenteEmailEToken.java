@@ -1,4 +1,4 @@
-package it.unimib.sd2024.Models;
+package it.unimib.sd2024.Utils;
 
 public class UtenteEmailEToken {
     // attributi privati

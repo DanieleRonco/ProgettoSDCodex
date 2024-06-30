@@ -12,10 +12,10 @@ public class Ordine {
     private String numeroCarta;
     private String data;
     private String oggetto;
-    private String quota;
+    private float quota;
 
     // costruttori
-    public Ordine(String dominioNome, String dominioTLD, String utenteEmail, String numeroCarta, String data, String oggetto, String quota){
+    public Ordine(String dominioNome, String dominioTLD, String utenteEmail, String numeroCarta, String data, String oggetto, float quota){
         this.setDominioNome(dominioNome);
         this.setDominioTLD(dominioTLD);
         this.setUtenteEmail(utenteEmail);
@@ -44,7 +44,7 @@ public class Ordine {
     public String getOggetto(){
         return this.oggetto;
     }
-    public String getQuota(){
+    public float getQuota(){
         return this.quota;
     }
 
@@ -67,7 +67,7 @@ public class Ordine {
     public void setOggetto(String oggetto){
         this.oggetto = oggetto;
     }
-    public void setQuota(String quota){
+    public void setQuota(float quota){
         this.quota = quota;
     }
 }

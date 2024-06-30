@@ -10,7 +10,7 @@ import it.unimib.sd2024.QueryBuilder.QueryBuilder;
 import it.unimib.sd2024.QueryBuilder.V1.Filter;
 import it.unimib.sd2024.QueryBuilder.V1.UpdateDefinition;
 import it.unimib.sd2024.Models.*;
-import it.unimib.sd2024.Utils.Autenticazione;
+import it.unimib.sd2024.Utils.*;
 import jakarta.json.bind.Jsonb;
 import jakarta.json.bind.JsonbBuilder;
 import jakarta.ws.rs.Consumes;
@@ -52,6 +52,7 @@ public class DominioResources {
     @Produces(MediaType.APPLICATION_JSON)
     public Response getAvailable(@HeaderParam("Bearer") String token, @PathParam("nome") String nome, @PathParam("TLD") String TLD) throws InterruptedException, IOException {
         // verificare se un dominio è disponibile
+        // 0. si verifica se il dominio è valido
         // 0. si verifica l'autenticazione
         // 1. si verifica se nome+TLD sono presenti in 'domains'
         //  1.1 presente, si verifica lo stato
@@ -60,11 +61,8 @@ public class DominioResources {
         //  1.2 non presente, è disponibile
         // -----------------------------------------------------
 
-
-        // TODO: Aggiungere controllo validità dominio
-
-
-
+        if(!ValidazioneDominio.isValidDomain(nome, TLD))
+            return Response.status(400).entity("dominio non valido").build();
 
         if(Autenticazione.checkAuthentication(token)){
             // autenticato
@@ -145,16 +143,17 @@ public class DominioResources {
     }
 
     /**
-     * Implementazione di POST "/domain/register/{nome}/{TLD}/{durata}/{quantita}"
+     * Implementazione di POST "/domain/register/{nome}/{TLD}"
      * @throws IOException 
      * @throws InterruptedException 
      */
-    @Path("/register/{nome}/{TLD}/{durata}/{quantita}")
+    @Path("/register/{nome}/{TLD}")
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response postRegister(@HeaderParam("Bearer") String token, @PathParam("nome") String nome, @PathParam("TLD") String TLD, @PathParam("durata") int durata, @PathParam("quantita") float quantita, Carta carta) throws InterruptedException, IOException {
+    public Response postRegister(@HeaderParam("Bearer") String token, @PathParam("nome") String nome, @PathParam("TLD") String TLD, TempoQuantitaCarta tqc) throws InterruptedException, IOException {
         // informazioni su 'dominio', 'durata' e 'quantita' in chiaro nell'header
         // informazioni su 'carta' non in chiaro nell'header ma nel body
+        // 0. si verifica se il dominio è valido
         // 0. parametri non validi
         //    durata minimo 1 massimo 10 anni
         //    quantita positiva
@@ -172,12 +171,13 @@ public class DominioResources {
         // 6. si aggiorna lo stato a 'active'
         // --------------------------------------------------------------------------
 
-        // TODO: Aggiungere controllo Dominio
+        if(!ValidazioneDominio.isValidDomain(nome, TLD))
+            return Response.status(400).entity("dominio non valido").build();
 
-        if(((durata < 1) || (durata > 10)) || (quantita <= 0))
+        if(((tqc.getTempo() < 1) || (tqc.getTempo() > 10)) || (tqc.getQuantita() <= 0))
             return Response.status(400).entity("parametri non validi").build(); // parametri non validi
         String registrationDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy"));
-        String expirationDate = LocalDateTime.now().plusYears(durata).format(DateTimeFormatter.ofPattern("dd-MM-yyyy"));
+        String expirationDate = LocalDateTime.now().plusYears(tqc.getTempo()).format(DateTimeFormatter.ofPattern("dd-MM-yyyy"));
         
         if(!Autenticazione.checkAuthentication(token))
             return Response.status(401).build(); // non autenticato
@@ -212,17 +212,17 @@ public class DominioResources {
         }
 
         // si aggiunge l'ordine
-        DatabaseResponse rispostaAggiuntaOrdine = comunicazioneDatabase.ExecuteQuery(QueryBuilder.V1().INSERT().setCollection("orders").insert(new Ordine(nome, TLD, emailEToken.getUserEmail(), carta.getNumero(), registrationDate, "registration", String.valueOf(quantita))));
+        DatabaseResponse rispostaAggiuntaOrdine = comunicazioneDatabase.ExecuteQuery(QueryBuilder.V1().INSERT().setCollection("orders").insert(new Ordine(nome, TLD, emailEToken.getUserEmail(), tqc.getCarta().getNumero(), registrationDate, "registration", tqc.getQuantita())));
         if(rispostaAggiuntaOrdine.isErrorResponse())
             return Response.status(500).build(); // errore
         
         // si verifica se la carta è già presente
-        DatabaseResponse rispostaCartaPresente = comunicazioneDatabase.ExecuteQuery(QueryBuilder.V1().FIND().setCollection("cards").filter(new Filter().add("numero", carta.getNumero())));
+        DatabaseResponse rispostaCartaPresente = comunicazioneDatabase.ExecuteQuery(QueryBuilder.V1().FIND().setCollection("cards").filter(new Filter().add("numero", tqc.getCarta().getNumero())));
         if(rispostaCartaPresente.isErrorResponse())
             return Response.status(500).build(); // errore
         if(rispostaCartaPresente.getDetectedDocumentsCount() == 0){
             // non presente, si aggiunge
-            DatabaseResponse rispostaAggiuntaCarta = comunicazioneDatabase.ExecuteQuery(QueryBuilder.V1().INSERT().setCollection("cards").insert(carta));
+            DatabaseResponse rispostaAggiuntaCarta = comunicazioneDatabase.ExecuteQuery(QueryBuilder.V1().INSERT().setCollection("cards").insert(tqc.getCarta()));
             if(rispostaAggiuntaCarta.isErrorResponse())
                 return Response.status(500).build(); // errore
         }
@@ -241,14 +241,15 @@ public class DominioResources {
     }
 
     /**
-     * Implementazione di POST "domain/renewal/{nome}/{TLD}/{aggiunta}/{quantita}"
+     * Implementazione di POST "domain/renewal/{nome}/{TLD}"
      * @throws IOException 
      * @throws InterruptedException 
      */
-    @Path("/renewal/{nome}/{TLD}/{aggiunta}/{quantita}")
+    @Path("/renewal/{nome}/{TLD}")
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response postRenewal(@HeaderParam("Bearer") String token, @PathParam("nome") String nome, @PathParam("TLD") String TLD, @PathParam("aggiunta") int aggiunta, @PathParam("quantita") int quantita, Carta carta) throws InterruptedException, IOException {
+    public Response postRenewal(@HeaderParam("Bearer") String token, @PathParam("nome") String nome, @PathParam("TLD") String TLD, TempoQuantitaCarta tqc) throws InterruptedException, IOException {
+        // 0. si verifica se il dominio è valido
         // 0. autenticato
         // 1. si ottiene l'email dell'utente
         // 2. si ottiene il dominio
@@ -258,7 +259,8 @@ public class DominioResources {
         //  4.2 non associato, non autorizzato
         // ----------------------------------------------------------------------------------------------------------------------
 
-        // TODO: aggiungere controllo dominio
+        if(!ValidazioneDominio.isValidDomain(nome, TLD))
+            return Response.status(400).entity("dominio non valido").build();
 
         // autenticato
         if(!Autenticazione.checkAuthentication(token))
@@ -279,7 +281,7 @@ public class DominioResources {
         Registrazione registrazione = jsonb.fromJson(rispostaDominio.getRetrievedDocuments()[0], Registrazione.class);
 
         // si verifica se la somma porterebbe ad un errore        
-        LocalDateTime extendedDate = LocalDateTime.parse(registrazione.getExpirationDate()).plusYears(quantita);
+        LocalDateTime extendedDate = LocalDateTime.parse(registrazione.getExpirationDate()).plusYears(tqc.getTempo());
         LocalDateTime tenYearsDate = LocalDateTime.now().plusYears(10);
         if(extendedDate.isAfter(tenYearsDate))
             return Response.status(400).entity("si eccede il tempo massimo di registrazione (10 anni dalla data corrente)").build();
@@ -294,17 +296,17 @@ public class DominioResources {
             return Response.status(500).build(); // errore
         
         // si crea l'ordine in 'orders'
-        DatabaseResponse rispostaAggiuntaOrdine = comunicazioneDatabase.ExecuteQuery(QueryBuilder.V1().INSERT().setCollection("orders").insert(new Ordine(nome, TLD, emailEToken.getUserEmail(), carta.getNumero(), registrazione.getRegistrationDate(), "renewal", String.valueOf(quantita))));
+        DatabaseResponse rispostaAggiuntaOrdine = comunicazioneDatabase.ExecuteQuery(QueryBuilder.V1().INSERT().setCollection("orders").insert(new Ordine(nome, TLD, emailEToken.getUserEmail(), tqc.getCarta().getNumero(), registrazione.getRegistrationDate(), "renewal", tqc.getQuantita())));
         if(rispostaAggiuntaOrdine.isErrorResponse())
             return Response.status(500).build(); // errore
         
         // eventualmente si inserisce la carta in 'cards'
-        DatabaseResponse rispostaCartaPresente = comunicazioneDatabase.ExecuteQuery(QueryBuilder.V1().FIND().setCollection("cards").filter(new Filter().add("numero", carta.getNumero())));
+        DatabaseResponse rispostaCartaPresente = comunicazioneDatabase.ExecuteQuery(QueryBuilder.V1().FIND().setCollection("cards").filter(new Filter().add("numero", tqc.getCarta().getNumero())));
         if(rispostaCartaPresente.isErrorResponse())
             return Response.status(500).build(); // errore
         if(rispostaCartaPresente.getDetectedDocumentsCount() == 0){
             // non presente, si aggiunge
-            DatabaseResponse rispostaAggiuntaCarta = comunicazioneDatabase.ExecuteQuery(QueryBuilder.V1().INSERT().setCollection("cards").insert(carta));
+            DatabaseResponse rispostaAggiuntaCarta = comunicazioneDatabase.ExecuteQuery(QueryBuilder.V1().INSERT().setCollection("cards").insert(tqc.getCarta()));
             if(rispostaAggiuntaCarta.isErrorResponse())
                 return Response.status(500).build(); // errore
         }

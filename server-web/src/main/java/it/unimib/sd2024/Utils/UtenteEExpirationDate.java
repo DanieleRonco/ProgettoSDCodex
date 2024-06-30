@@ -1,4 +1,6 @@
-package it.unimib.sd2024.Models;
+package it.unimib.sd2024.Utils;
+
+import it.unimib.sd2024.Models.Utente;
 
 public class UtenteEExpirationDate {
     // attributi privati

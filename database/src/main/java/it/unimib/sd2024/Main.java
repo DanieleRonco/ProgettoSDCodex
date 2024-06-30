@@ -7,6 +7,8 @@ import it.unimib.sd2024.Server.Server;
 import it.unimib.sd2024.StorageManager.StorageManager;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 
 public class Main {
     public static final int DEFAULT_PORT = 3030;
@@ -21,9 +23,10 @@ public class Main {
     public static void main(String[] args) throws IOException {
         LogLevelType logLevel = DEFAULT_LOG_LEVEL;
         int port = DEFAULT_PORT;
+        String hostname = "localhost";
         for (String arg : args) {
             switch (arg) {
-                case "--help", "-h":
+                case "--help":
                     System.out.println("Usage: java -jar database.jar [--port=PORT] [--log-level=LEVEL]");
                     System.out.println("PORT: port number to listen on, default is 3030");
                     System.out.println("LEVEL: log level, default is INFO");
@@ -35,6 +38,10 @@ public class Main {
                     break;
                 case "--log-level", "-ll":
                     System.out.println("Log level must be specified");
+                    System.exit(1);
+                    break;
+                case "--hostname", "-h":
+                    System.out.println("Hostname must be specified");
                     System.exit(1);
                     break;
             }
@@ -67,13 +74,23 @@ public class Main {
                         System.out.println("Log level not recognized, only supported levels are DEBUG, INFO, WARNING, ERROR");
                         System.exit(1);
                 }
+            } else if (arg.startsWith("--hostname=") || arg.startsWith("-h=")) {
+                hostname = arg.split("=")[1];
             }
+        }
+
+        SocketAddress address = null;
+        try {
+            address = new InetSocketAddress(hostname, port);
+        } catch (Exception e) {
+            System.out.println("Hostname not valid");
+            System.exit(1);
         }
 
         Logger log = new Logger(logLevel);
         StorageManager s = new StorageManager();
         Controller controller = new Controller(log, s);
-        Server server = new Server(port, log, controller);
+        Server server = new Server(port, log, address, controller);
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {

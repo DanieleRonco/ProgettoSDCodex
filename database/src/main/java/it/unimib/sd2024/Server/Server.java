@@ -16,6 +16,7 @@ import java.io.PrintWriter;
 import java.math.BigDecimal;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketAddress;
 import java.util.ArrayList;
 
 public class Server {
@@ -23,25 +24,28 @@ public class Server {
     private final Logger log;
     private final int stopTimeout;
     private final Controller controller;
+    private SocketAddress address;
     private boolean isRunning;
 
-    public Server(int port, Logger log, Controller controller) {
+    public Server(int port, Logger log, SocketAddress address, Controller controller) {
         //0 for stopTimeout means it will wait indefinitely
-        this(port, log, 0, controller);
+        this(port, log, 0, address, controller);
     }
 
-    public Server(int port, Logger log, int stopTimeout, Controller controller) {
+    public Server(int port, Logger log, int stopTimeout, SocketAddress address, Controller controller) {
         this.port = port;
         this.log = log;
         this.stopTimeout = stopTimeout;
         this.controller = controller;
+        this.address = address;
     }
 
     public void start() throws IOException {
         this.isRunning = true;
         log.Debug("Server started on port " + port);
-        var server = new ServerSocket(port);
-        log.Info("Database listening at localhost:" + port);
+        var server = new ServerSocket();
+        server.bind(address);
+        log.Info("Database listening on " + server.getLocalSocketAddress());
 
         try {
             while (isRunning) {

@@ -1,14 +1,14 @@
-### documento
+### Documento
 
-Ogni documento ha un `_id` univoco (uuid)
+Ogni documento possiede un `_id` univoco (UUID).
 
-### collection
+### Collection
 
-Una collection è un insieme di documenti, non c'è vincolo sul tipo di documenti che possono essere memorizzati all'interno della collection ma a livello logico si tende a mentenere una coerenza tra gli elementi di una collection
+Una collection è un insieme di documenti. Non vi sono vincoli sul tipo di documenti che possono essere memorizzati all'interno della collection, ma a livello logico si tende a mantenere una coerenza tra gli elementi di una collection.
 
-### Definizione del protocollo
+### Definizione del Protocollo
 
-Il protocollo è di tipo testuale con formato JSON in modo da mantenere una comunicazione semplice e developer friendly
+Il protocollo è di tipo testuale in formato JSON, al fine di mantenere una comunicazione semplice e developer friendly.
 
 GET
 utenti
@@ -45,7 +45,3 @@ UPDATE
 <collection>
 {query}
 {"chiave":"nuovo valore", "chiave2":"nuovo valore"}
-
-```
-
-```

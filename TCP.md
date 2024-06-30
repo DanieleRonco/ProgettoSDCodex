@@ -1,6 +1,6 @@
 # Progetto Sistemi Distribuiti 2023-2024 - TCP
 
-## introduzione
+## Introduzione
 
 Il protocollo si basa sull'invio di stringhe (protocollo testuale) tra un Server Web, che opera come Client, ed un Database, che opera come Server.
 Il protocollo non è ispirato ad altri protocolli esistenti. Si è cercato di strutturare le query in maniera simile a MongoDB, ma non si è approfondito ulteriormente il protocollo di comunicazione di questo DBMS.

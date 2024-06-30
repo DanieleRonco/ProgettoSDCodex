@@ -171,8 +171,8 @@ Permette di aggiornare un documento in una collezione. Struttura di una richiest
     }
   ],
   "update": [
-    {"key": "chiave", "value": "nuovo valore"},
-    {"key": "chiave2", "value": "nuovo valore"}
+    {"key": "chiave", "value": "nuovo valore", "valueType": "String"},
+    {"key": "chiave2", "value": "nuovo valore", "valueType": "String"}
   ]
 }
 ```

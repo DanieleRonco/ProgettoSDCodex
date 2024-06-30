@@ -392,7 +392,7 @@ public class DominioResources {
             return Response.status(409).entity("non sei il proprietario del dominio").build();
 
         // si aggiorna 'registered'
-        DatabaseResponse rispostaAggiornamentoData = comunicazioneDatabase.ExecuteQuery(QueryBuilder.V1().UPDATE().setCollection("registered").filter(new Filter().add("name", nome).add("TLD", TLD).add("email", emailEToken.getEmail())).updateOn(new UpdateDefinition().add("expirationDate", extendedDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy")))));
+        DatabaseResponse rispostaAggiornamentoData = comunicazioneDatabase.ExecuteQuery(QueryBuilder.V1().UPDATE().setCollection("registered").filter(new Filter().add("dominioNome", nome).add("dominioTLD", TLD).add("utenteEmail", emailEToken.getEmail())).updateOn(new UpdateDefinition().add("expirationDate", extendedDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy")))));
         if (rispostaAggiornamentoData.isErrorResponse())
             return Response.status(500).build(); // errore
 

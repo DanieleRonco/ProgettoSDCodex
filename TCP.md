@@ -208,8 +208,7 @@ I filtri permettono di selezionare dei documenti all'interno di una collezione p
 - `value`: valore da confrontare
 - `valueType`: tipo del valore, i valori possibili sono:
   - `String`
-  - `Integer`
-  - `Double`
+  - `Number`
   - `Boolean` (i valori di comparison per i boolean sono `EQAUL` e `NOT_EQUAL`)
   - `Null` (i valori di comparison per i null sono `EQAUL` e `NOT_EQUAL`)
 

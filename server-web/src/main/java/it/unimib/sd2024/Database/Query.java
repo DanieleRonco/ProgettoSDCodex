@@ -33,6 +33,6 @@ public class Query {
     }
 
     public String build() {
-        return JsonbBuilder.create().toJson(this);
+        return JsonbBuilder.create().toJson(this)+"\n";
     }
 }

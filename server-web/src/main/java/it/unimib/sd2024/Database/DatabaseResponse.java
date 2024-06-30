@@ -8,6 +8,7 @@ public class DatabaseResponse {
 
     public DatabaseResponse(String rawResponse) {
         this.rawResponse = rawResponse;
+        parseResponse();
     }
 
     private void parseResponse() {
@@ -36,36 +37,5 @@ public class DatabaseResponse {
 
     public boolean isErrorResponse() {
         return responseInfo.isError();
-    }
-}
-
-class DatabaseResponseInfo {
-    private boolean isError;
-    private String message;
-    private int affectedDocumentsCount;
-    private int detectedDocumentsCount;
-    private String[] retrievedDocuments;
-
-    public DatabaseResponseInfo() {
-    }
-
-    public String[] getRetrievedDocuments() {
-        return retrievedDocuments;
-    }
-
-    public int getDetectedDocumentsCount() {
-        return detectedDocumentsCount;
-    }
-
-    public int getAffectedDocumentsCount() {
-        return affectedDocumentsCount;
-    }
-
-    public String getMessage() {
-        return message;
-    }
-
-    public boolean isError() {
-        return isError;
     }
 }

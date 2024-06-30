@@ -226,6 +226,11 @@ l'aggiornamento permette di modificare i valori di un documento all'interno di u
 
 - `key`: chiave del documento
 - `value`: valore da aggiornare
+- `valueType`: tipo del valore, i valori possibili sono:
+  - `String`
+  - `Number`
+  - `Boolean`
+  - `Null`
 
 se una chiave non é presente nel documento, verrá creata con il valore specificato.
 

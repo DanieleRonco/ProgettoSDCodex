@@ -1,6 +1,7 @@
 # Progetto Sistemi Distribuiti 2023-2024
 
 ProgettoSDCodex del gruppo Codex.
+
 Il progetto prevede lo sviluppo di un'applicazione distribuita per l'acquisto e la gestione di domini Internet. L'applicazione è composta da un Client Web per l'interazione con l'utente tramite API REST, un Server Web per la logica di gestione tramite API REST e socket TCP ed un Database documentale per memorizzare dati di acquisti e domini.
 
 ## Componenti del gruppo

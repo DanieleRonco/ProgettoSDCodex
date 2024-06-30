@@ -16,7 +16,7 @@ Il Client instaura una connessione con il Database tramite una socket TCP.
 
 ### Server (Database)
 
-Normalmente, il Database rimane in ascolto sulla porta 3030, che può essere cambiata utilizzando la flag `--port` o `-p`.
+Normalmente, il Database rimane in ascolto su localhost:3030, che si puó cambiare la porta utilizzando la flag `--port` o `-p` e l'hostname con `--hostname` o `-h`.
 Inoltre, è possibile cambiare il livello di log usando la flag `--log` o `-l`, i valori permessi sono:
 
 - `DEBUG`: logga tutte le operazioni con maggiori dettagli, ma troppo prolisso per un utilizzo normale

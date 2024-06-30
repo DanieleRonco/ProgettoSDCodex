@@ -110,7 +110,7 @@
 
 **Header**: `Content-Type` con il valore `application/json` e `Authorization` per il token di sessione, in aggiunta a quelli già impostati automaticamente.
 
-**Body Richiesta**: rappresentazione in formato JSON di `tempo`, che rappresenta la durata della registrazione del Dominio, `quantita`, che rappresenta la quota pagata per la registrazione del Dominio, di una Carta, con i seguenti campi: `numero`, `scadenza`, `cvv`, `nome intestatario`, `cognome intestatario`.
+**Body Richiesta**: rappresentazione in formato JSON di `tempo`, che rappresenta la durata della registrazione del Dominio, `quantita`, che rappresenta la quota pagata per la registrazione del Dominio, e delle informazioni di una Carta, quali `numero`, `scadenza`, `cvv`, `nome intestatario`, `cognome intestatario`.
 
 **Risposta**: nessun contenuto.
 
@@ -134,7 +134,7 @@
 
 **Header**: `Content-Type` con il valore `application/json` e `Authorization` per il token di sessione, in aggiunta a quelli già impostati automaticamente.
 
-**Body Richiesta**: rappresentazione in formato JSON di `tempo`, che rappresenta il tempo di estensione della registrazione del Dominio, `quantita`, che rappresenta la quota pagata per il rinnovo del Dominio, di una Carta, con i seguenti campi: `numero`, `scadenza`, `cvv`, `nome intestatario`, `cognome intestatario`.
+**Body Richiesta**: rappresentazione in formato JSON di `tempo`, che rappresenta il tempo di estensione della registrazione del Dominio, `quantita`, che rappresenta la quota pagata per il rinnovo del Dominio, e delle informazioni di una Carta, quali `numero`, `scadenza`, `cvv`, `nome intestatario`, `cognome intestatario`.
 
 **Risposta**: nessun contenuto.
 

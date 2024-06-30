@@ -65,9 +65,22 @@
         .container button:hover {
             background-color: #0056b3;
         }
+        .back-link {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 14px;
+            color: #007BFF;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
+    <a href="main.html" class="back-link">Torna indietro</a>
     <div class="container">
         <h1>Registrazione Dominio</h1>
         <div class="grid-left">
@@ -93,7 +106,7 @@
             <input type="text" id="numero_carta" name="numero_carta" required>
             
             <label for="scadenza_carta">Scadenza della carta:</label>
-            <input type="date" id="scadenza_carta" name="scadenza_carta" placeholder="MM/AA" required>
+            <input type="text" id="scadenza_carta" name="scadenza_carta" placeholder="MM/AA" required>
             
             <label for="cvv_carta">CVV della carta:</label>
             <input type="text" id="cvv_carta" name="cvv_carta" maxlength="3" required>
@@ -106,5 +119,17 @@
         </div>
         <button type="submit">Registra Dominio</button>
     </div>
+
+    <script>
+        // validazione della data di scadenza della carta
+        document.getElementById('scadenza_carta').addEventListener('input', function() {
+            var input = this.value;
+            if (/^\d{2}\/\d{2}$/.test(input)) {
+                this.setCustomValidity('');
+            } else {
+                this.setCustomValidity('Il formato deve essere MM/YY');
+            }
+        });
+    </script>
 </body>
 </html>

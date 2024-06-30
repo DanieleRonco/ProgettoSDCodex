@@ -254,6 +254,80 @@ public class DominioResources {
     }
 
     /**
+     * Implementazione di GET "/domain/lock/{nome}/{TLD}"
+     * @throws IOException 
+     * @throws InterruptedException 
+     */
+    @Path("/lock/{nome}/{TLD}")
+    @GET
+    public Response getLock(@HeaderParam("Authorization") String token, @PathParam("nome") String nome, @PathParam("TLD") String TLD) throws InterruptedException, IOException {
+        // se possibile, si blocca l'acquisizione di un dominio
+        // 0. dominio corretto
+        // 0. autenticazione
+        // 1. si verifica se il dominio è in stato di 'acquiring'
+        //  1.1 sì, conflitto
+        //  1.2 no, lo si pone in stato di 'acquiring'
+
+        if(!ValidazioneDominio.isValidDomain(nome, TLD))
+            return Response.status(400).entity("dominio non valido").build(); // dominio non valido
+        
+        if(!Autenticazione.checkAuthentication(token))
+            return Response.status(401).build(); // non autenticato
+        
+        Database comunicazionDatabase = new Database();
+        DatabaseResponse rispostaDominio = comunicazionDatabase.ExecuteQuery(QueryBuilder.V1().FIND().setCollection("domains").filter(new Filter().add("nome", nome).add("TLD", TLD)));
+        if(rispostaDominio.isErrorResponse())
+            return Response.status(500).build();
+        Dominio dominio = jsonb.fromJson(rispostaDominio.getRetrievedDocuments()[0], Dominio.class);
+
+        // si verifica se il dominio è in stato di 'acquiring'
+        if(dominio.getStato().equals("acquiring"))
+            return Response.status(409).entity("dominio già in fase di acquisizione").build(); // 'acquiring'
+        // non 'acquiring'
+        DatabaseResponse rispostaAggiornamento = comunicazionDatabase.ExecuteQuery(QueryBuilder.V1().UPDATE().setCollection("domains").filter(new Filter().add("nome", nome).add("TLD", TLD)).updateOn(new UpdateDefinition().add("stato", "acquiring")));
+        if(!rispostaAggiornamento.isErrorResponse())
+            return Response.status(500).build();
+        return Response.status(200).build();
+    }
+
+    /**
+     * Implementazione di GET "/domain/unlock/{nome}/{TLD}"
+     * @throws IOException 
+     * @throws InterruptedException 
+     */
+    @Path("/unlock/{nome}/{TLD}")
+    @GET
+    public Response getUnlock(@HeaderParam("Authorization") String token, @PathParam("nome") String nome, @PathParam("TLD") String TLD) throws InterruptedException, IOException {
+        // si rilascia l'acquisizione di un dominio
+        // 0. dominio corretto
+        // 0. autenticazione
+        // 1. si verifica se il dominio è in stato di 'acquiring'
+        //  1.1 non in stato di 'acquiring', errore
+        //  1.2 in stato di 'acquiring', lo si rilascia
+
+        if(!ValidazioneDominio.isValidDomain(nome, TLD))
+            return Response.status(400).entity("dominio non valido").build(); // dominio non valido
+        
+        if(!Autenticazione.checkAuthentication(token))
+            return Response.status(401).build(); // non autenticato
+        
+        Database comunicazionDatabase = new Database();
+        DatabaseResponse rispostaDominio = comunicazionDatabase.ExecuteQuery(QueryBuilder.V1().FIND().setCollection("domains").filter(new Filter().add("nome", nome).add("TLD", TLD)));
+        if(rispostaDominio.isErrorResponse())
+            return Response.status(500).build();
+        Dominio dominio = jsonb.fromJson(rispostaDominio.getRetrievedDocuments()[0], Dominio.class);
+
+        // si verifica se il dominio è in stato di 'acquiring'
+        if(!dominio.getStato().equals("acquiring"))
+            return Response.status(400).entity("dominio non in fase di acquisizione").build(); // non 'acquiring'
+        // 'acquiring'
+        DatabaseResponse rispostaAggiornamento = comunicazionDatabase.ExecuteQuery(QueryBuilder.V1().UPDATE().setCollection("domains").filter(new Filter().add("nome", nome).add("TLD", TLD)).updateOn(new UpdateDefinition().add("stato", "active")));
+        if(!rispostaAggiornamento.isErrorResponse())
+            return Response.status(500).build();
+        return Response.status(200).build();
+    }
+
+    /**
      * Implementazione di POST "domain/renewal/{nome}/{TLD}"
      *
      * @throws IOException
@@ -297,8 +371,7 @@ public class DominioResources {
                 .setCollection("registered")
                 .filter(new Filter()
                         .add("dominioNome", nome)
-                        .add("dominioTLD", TLD)
-                        .add("utenteEmail", emailEToken.getEmail())));
+                        .add("dominioTLD", TLD)));
 
         if (rispostaDominio.isErrorResponse())
             return Response.status(500).build(); // errore
@@ -316,7 +389,7 @@ public class DominioResources {
 
         // si verifica se il dominio è associato all'utente
         if (!emailEToken.getEmail().equals(registrazione.getUtenteEmail()))
-            return Response.status(401).entity("non sei il proprietario del dominio").build();
+            return Response.status(409).entity("non sei il proprietario del dominio").build();
 
         // si aggiorna 'registered'
         DatabaseResponse rispostaAggiornamentoData = comunicazioneDatabase.ExecuteQuery(QueryBuilder.V1().UPDATE().setCollection("registered").filter(new Filter().add("name", nome).add("TLD", TLD).add("email", emailEToken.getEmail())).updateOn(new UpdateDefinition().add("expirationDate", extendedDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy")))));

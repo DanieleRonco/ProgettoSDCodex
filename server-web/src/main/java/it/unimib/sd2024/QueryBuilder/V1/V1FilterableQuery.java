@@ -27,7 +27,7 @@ public class V1FilterableQuery extends V1CollectionOperationQuery {
         }
 
         var query = super.build();
-        return query.substring(0, query.length() - 1) +
+        return query.substring(0, query.length() - 2) +
                 ",\"filter\":" +
                 this.filter.build() +
                 "}";

@@ -10,11 +10,9 @@ public class FilterContent {
 
     public FilterContent(String key, Object value, ComparisonType comp) {
         this();
-        this.setKey(key);
-        this.setValue(value);
+        this.kv = new KeyValue(key, value);
         this.setComparison(comp);
     }
-
 
     public String getKey() {
         return this.kv.getKey();
@@ -36,6 +34,10 @@ public class FilterContent {
             throw new IllegalArgumentException("Value must not be null or empty");
         }
         this.kv.setValue(value);
+    }
+
+    public String getValueType() {
+        return this.kv.getValueType();
     }
 
     public ComparisonType getComparison() {

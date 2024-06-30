@@ -49,7 +49,6 @@ public class V1QueryBuilder {
         return new V1InsertQuery(collection);
     }
 
-
     public V1UpdateQuery UPDATE() {
         return new V1UpdateQuery();
     }

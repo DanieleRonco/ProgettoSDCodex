@@ -19,7 +19,6 @@ public class Filter {
         this.nextFilter = new Filter();
         this.nextFilter.beforeFilter = this;
         return this.nextFilter;
-
     }
 
     private FilterContent getFilterContent() {
@@ -47,4 +46,3 @@ public class Filter {
         return "[" + sb.toString() + "]";
     }
 }
-

@@ -1,9 +1,8 @@
-<!DOCTYPE html>
 <html lang="it">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registrazione Dominio</title>
+    <title>Registrazione Dominio - Codex - Domini Internet</title>
     <style>
         body {
             display: flex;
@@ -44,11 +43,13 @@
             font-size: 16px;
             box-sizing: border-box;
         }
-        .container .grid-left {
+        .grid-left {
             grid-column: 1 / 2;
+            text-align: left;
         }
-        .container .grid-right {
+        .grid-right {
             grid-column: 2 / 3;
+            text-align: left;
         }
         .container button {
             width: calc(100% - 20px);
@@ -59,6 +60,7 @@
             color: white;
             font-size: 16px;
             cursor: pointer;
+            grid-column: span 2;
         }
         .container button:hover {
             background-color: #0056b3;
@@ -70,17 +72,17 @@
         <h1>Registrazione Dominio</h1>
         <div class="grid-left">
             <label for="dominio">Nome del dominio:</label>
-            <input type="text" id="dominio" name="dominio" required>
+            <input type="text" id="dominio" name="nome_dominio" required>
             
             <label for="tld">TLD (Top Level Domain):</label>
             <select id="tld" name="tld" required>
-                <option value="com">.com</option>
-                <option value="org">.org</option>
-                <option value="net">.net</option>
-                <option value="edu">.edu</option>
-                <option value="gov">.gov</option>
-                <option value="mil">.mil</option>
-                <option value="int">.int</option>
+                <option value="com">com</option>
+                <option value="org">org</option>
+                <option value="net">net</option>
+                <option value="edu">edu</option>
+                <option value="gov">gov</option>
+                <option value="mil">mil</option>
+                <option value="int">int</option>
             </select>
             
             <label for="durata">Durata registrazione (anni):</label>
@@ -91,13 +93,16 @@
             <input type="text" id="numero_carta" name="numero_carta" required>
             
             <label for="scadenza_carta">Scadenza della carta:</label>
-            <input type="text" id="scadenza_carta" name="scadenza_carta" placeholder="MM/AA" required>
+            <input type="date" id="scadenza_carta" name="scadenza_carta" placeholder="MM/AA" required>
             
             <label for="cvv_carta">CVV della carta:</label>
             <input type="text" id="cvv_carta" name="cvv_carta" maxlength="3" required>
             
-            <label for="intestatario">Nome e cognome dell'intestatario:</label>
-            <input type="text" id="intestatario" name="intestatario" required>
+            <label for="intestatario">Nome dell'intestatario:</label>
+            <input type="text" id="intestatario" name="nome_intestatario" required>
+
+            <label for="intestatario">Cognome dell'intestatario:</label>
+            <input type="text" id="intestatario" name="cognome_intestatario" required>
         </div>
         <button type="submit">Registra Dominio</button>
     </div>

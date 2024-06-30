@@ -1,0 +1,94 @@
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elenco Domini - Codex - Domini Internet</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 5px;
+            text-align: center;
+            width: 80%;
+            max-width: 800px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            position: relative;
+        }
+        .container h1 {
+            grid-column: span 2;
+            margin-bottom: 20px;
+        }
+        .container label {
+            display: block;
+            text-align: left;
+            margin-bottom: 5px;
+        }
+        .container input, .container select {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        .grid-left {
+            grid-column: 1 / 2;
+            text-align: left;
+        }
+        .grid-right {
+            grid-column: 2 / 3;
+            text-align: left;
+        }
+        .container button {
+            width: calc(100% - 20px);
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            background-color: #007BFF;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            grid-column: span 2;
+            margin-top: 10px;
+        }
+        .container button:hover {
+            background-color: #0056b3;
+        }
+        .back-link {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 14px;
+            color: #007BFF;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <a href="main.html" class="back-link">Torna indietro</a>
+    <div class="container">
+        <h1>Elenco Domini Registrati</h1>
+        <div class="grid-left">
+            <!-- Contenuto per l'elenco dei domini registrati -->
+            <p>Contenuto per l'elenco dei domini registrati.</p>
+        </div>
+    </div>
+</body>
+</html>

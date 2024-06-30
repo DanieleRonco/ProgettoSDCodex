@@ -4,6 +4,7 @@ import it.unimib.sd2024.Controller.Controller;
 import it.unimib.sd2024.Logger.LogLevelType;
 import it.unimib.sd2024.Logger.Logger;
 import it.unimib.sd2024.Server.Server;
+import it.unimib.sd2024.StorageManager.StorageManager;
 
 import java.io.IOException;
 
@@ -70,7 +71,8 @@ public class Main {
         }
 
         Logger log = new Logger(logLevel);
-        Controller controller = new Controller(log);
+        StorageManager s = new StorageManager();
+        Controller controller = new Controller(log, s);
         Server server = new Server(port, log, controller);
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
@@ -87,5 +89,4 @@ public class Main {
             e.printStackTrace();
         }
     }
-
 }

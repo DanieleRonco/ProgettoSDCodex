@@ -60,6 +60,12 @@ public class DominioResources {
         //  1.2 non presente, è disponibile
         // -----------------------------------------------------
 
+
+        // TODO: Aggiungere controllo validità dominio
+
+
+
+
         if(Autenticazione.checkAuthentication(token)){
             // autenticato
             DatabaseResponse rispostaPresente = comunicazioneDatabase.ExecuteQuery(QueryBuilder.V1().FIND().setCollection("domains").filter(new Filter().add("name", nome).add("TLD", TLD)));
@@ -166,6 +172,8 @@ public class DominioResources {
         // 6. si aggiorna lo stato a 'active'
         // --------------------------------------------------------------------------
 
+        // TODO: Aggiungere controllo Dominio
+
         if(((durata < 1) || (durata > 10)) || (quantita <= 0))
             return Response.status(400).entity("parametri non validi").build(); // parametri non validi
         String registrationDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy"));
@@ -249,6 +257,8 @@ public class DominioResources {
         //  4.1 associato, si aggiorna 'registered', si crea l'ordine in 'orders', eventualmente si inserisce la carta in 'cards'
         //  4.2 non associato, non autorizzato
         // ----------------------------------------------------------------------------------------------------------------------
+
+        // TODO: aggiungere controllo dominio
 
         // autenticato
         if(!Autenticazione.checkAuthentication(token))

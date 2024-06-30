@@ -14,9 +14,9 @@
 
 **Codici di Stato Restituiti**:
 
-    201 Created
+    201 Created, quando un Utente viene registrato correttamente.
 
-    400 Bad Request.
+    400 Bad Request, quando l'email specificata è già stata registrata.
 
 
 
@@ -28,15 +28,15 @@
 
 **Header**: `Content-Type` con il valore `application/json`, in aggiunta a quelli già impostati automaticamente.
 
-**Body Richiesta**: rappresentazione in formato JSON di un Utente, con solo i seguenti campi: `nome`, `cognome`, `email`.
+**Body Richiesta**: rappresentazione in formato JSON di un Utente, con solo i seguenti campi: `email`, `password`.
 
 **Risposta**: token di sessione.
 
 **Codici di Stato Restituiti**:
     
-    200 Ok
+    200 Ok, quando l'accesso è avvenuto correttamente e viene restituito il token di sessione.
     
-    400 Bad Request.
+    400 Bad Request, quando l'email specificata non è registrata oppure la password specificata non è corretta.
 
 
 
@@ -54,9 +54,9 @@
 
 **Codici di Stato Restituiti**:
     
-    200 Ok
+    200 Ok, quando viene restituito l'elenco degli ordini di un Utente.
     
-    401 Unauthorized.
+    401 Unauthorized, quando l'Utente non ha effettuato l'accesso.
 
 
 
@@ -70,13 +70,15 @@
 
 **Body Richiesta**: nessun contenuto.
 
-**Risposta**: Se il Dominio è disponibile, nessun contenuto. Se il Dominio non è disponibile, rappresentazione in formato JSON di un Utente, con solo i seguenti campi: `nome`, `cognome`, `email`, e data di scadenza della Registrazione del Dominio.
+**Risposta**: Se il Dominio è disponibile, nessun contenuto. Se il Dominio non è disponibile, rappresentazione in formato JSON di un Utente, con solo i seguenti campi: `nome`, `cognome`, `email`, e `data di scadenza` della Registrazione del Dominio.
 
 **Codici di Stato Restituiti**:
     
-    200 Ok
+    200 Ok, quando viene restituita la disponibilità del Dominio.
+
+    400 Bad Request, quando viene indicato un Dominio (nome o TLD) non valido.
     
-    401 Unauthorized.
+    401 Unauthorized, quando l'Utente non ha effettuato l'accesso.
 
 
 
@@ -94,52 +96,52 @@
 
 **Codici di Stato Restituiti**:
 
-    200 Ok
+    200 Ok, quando viene restituito l'elenco di tutti i Domini registrati.
     
-    401 Unauthorized.
+    401 Unauthorized, quando l'Utente non ha effettuato l'accesso.
 
 
 
-## `/register/{nome}/{TLD}/{durata}/{quantita}`
-### GET
+## `/register/{nome}/{TLD}`
+### POST
 **Descrizione**: consente la registrazione di un Dominio da parte di un Utente.
 
-**Parametri**: `nome` che rappresenta il nome del Dominio, `TLD` che rappresenta il Top Level Domain del Dominio, `durata` che rappresenta la durata della registrazione del Dominio, `quantita` che rappresenta la quota pagata per la registrazione del Dominio.
+**Parametri**: `nome` che rappresenta il nome del Dominio, `TLD` che rappresenta il Top Level Domain del Dominio.
 
 **Header**: `Content-Type` con il valore `application/json` e `Bearer` per il token di sessione, in aggiunta a quelli già impostati automaticamente.
 
-**Body Richiesta**: rappresentazione in formato JSON di una Carta, con i seguenti campi: `numero`, `scadenza`, `cvv`, `nome intestatario`, `cognome intestatario`.
+**Body Richiesta**: rappresentazione in formato JSON di `durata`, che rappresenta la durata della registrazione del Dominio, `quantita`, che rappresenta la quota pagata per la registrazione del Dominio, di una Carta, con i seguenti campi: `numero`, `scadenza`, `cvv`, `nome intestatario`, `cognome intestatario`.
 
 **Risposta**: nessun contenuto.
 
 **Codici di Stato Restituiti**:
     
-    200 Ok
+    200 Ok, quando il Dominio viene registrato correttamente.
     
-    400 Bad Request
+    400 Bad Request, quando viene indicato un Dominio (nome e TLD) non valido oppure quando durata e quantita non sono validi.
     
-    401 Unauthorized
+    401 Unauthorized, quando l'Utente non ha effettuato l'accesso.
     
-    409 Conflict.
+    409 Conflict, quando il Dominio è già in fase di acquisto.
 
 
 
-## `/renewal/{nome}/{TLD}/{aggiunta}/{quantita}`
-### GET
+## `/renewal/{nome}/{TLD}`
+### POST
 **Descrizione**: consente il rinnovo di un Dominio da parte di un Utente.
 
-**Parametri**: `nome` che rappresenta il nome del Dominio, `TLD` che rappresenta il Top Level Domain del Dominio, `aggiunta` che rappresenta il tempo di estensione della registrazione del Dominio, `quantita` che rappresenta la quota pagata per la registrazione del Dominio.
+**Parametri**: `nome` che rappresenta il nome del Dominio, `TLD` che rappresenta il Top Level Domain del Dominio.
 
 **Header**: `Content-Type` con il valore `application/json` e `Bearer` per il token di sessione, in aggiunta a quelli già impostati automaticamente.
 
-**Body Richiesta**: rappresentazione in formato JSON di una Carta, con i seguenti campi: `numero`, `scadenza`, `cvv`, `nome intestatario`, `cognome intestatario`.
+**Body Richiesta**: rappresentazione in formato JSON di `aggiunta`, che rappresenta il tempo di estensione della registrazione del Dominio, `quantita`, che rappresenta la quota pagata per il rinnovo del Dominio, di una Carta, con i seguenti campi: `numero`, `scadenza`, `cvv`, `nome intestatario`, `cognome intestatario`.
 
 **Risposta**: nessun contenuto.
 
 **Codici di Stato Restituiti**:
     
-    200 Ok
+    200 Ok, quando il Dominio viene rinnovato correttamente.
     
-    400 Bad Request
+    400 Bad Request, quando viene indicato un Dominio (nome e TLD) non valido oppure quando aggiunta e quantita non sono validi.
     
-    401 Unauthorized.
+    401 Unauthorized, quando l'Utente non ha effettuato l'accesso.

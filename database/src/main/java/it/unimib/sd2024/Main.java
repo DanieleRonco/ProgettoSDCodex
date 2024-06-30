@@ -23,7 +23,7 @@ public class Main {
     public static void main(String[] args) throws IOException {
         LogLevelType logLevel = DEFAULT_LOG_LEVEL;
         int port = DEFAULT_PORT;
-        String hostname = "localhost";
+        String hostname = "0.0.0.0";
         for (String arg : args) {
             switch (arg) {
                 case "--help":

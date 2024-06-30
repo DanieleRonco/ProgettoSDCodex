@@ -45,7 +45,7 @@ public class Server {
         log.Debug("Server started on port " + port);
         var server = new ServerSocket();
         server.bind(address);
-        log.Info("Database listening on " + server.getLocalSocketAddress());
+        log.Info("Database listening on " + server.getInetAddress() + ":"+server.getLocalPort());
 
         try {
             while (isRunning) {

@@ -7,7 +7,7 @@ import it.unimib.sd2024.Database.DatabaseResponse;
 import it.unimib.sd2024.QueryBuilder.QueryBuilder;
 import it.unimib.sd2024.QueryBuilder.V1.Filter;
 import it.unimib.sd2024.Models.*;
-import it.unimib.sd2024.Utils.*;
+import it.unimib.sd2024.Resources.httpModels.HTTPToken;
 import it.unimib.sd2024.Utils.Autenticazione;
 import jakarta.json.bind.Jsonb;
 import jakarta.json.bind.JsonbBuilder;
@@ -24,13 +24,15 @@ import jakarta.ws.rs.core.Response;
 @Path("order")
 public class OrdineResources {
     // Attributi privati statici...
-    private static Database comunicazioneDatabase;
     private static Jsonb jsonb;
 
     // Inizializzazione statica.
     static {
         try {
             Database comunicazioneDatabase = new Database();
+            comunicazioneDatabase.ExecuteQuery(QueryBuilder.V1().CREATE("orders"));
+            comunicazioneDatabase.ExecuteQuery(QueryBuilder.V1().CREATE("tokens"));
+
             jsonb = JsonbBuilder.create();
         } catch (Exception e) {
             e.printStackTrace();
@@ -45,7 +47,7 @@ public class OrdineResources {
     @Path("/myOrders")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getMyOrders(@HeaderParam("Bearer") String token) throws InterruptedException, IOException {
+    public Response getMyOrders(@HeaderParam("Authorization") String token) throws InterruptedException, IOException {
         // ottenere l'elenco degli ordini dell'utente
         // 0. si verifica l'autenticazione
         // 1. si ottiene l'email dell'utente, dato il token
@@ -57,13 +59,14 @@ public class OrdineResources {
 
         // verifica autenticazione
         if(Autenticazione.checkAuthentication(token)){
+            Database comunicazioneDatabase = new Database();
             // autenticato
             // si ottiene l'email dell'utente, dato il token
             DatabaseResponse rispostaEmail = comunicazioneDatabase.ExecuteQuery(QueryBuilder.V1().FIND().setCollection("tokens").filter(new Filter().add("token", token)));
             if(!rispostaEmail.isErrorResponse()){
                 // nessun errore
-                UtenteEmailEToken emailEToken = jsonb.fromJson(rispostaEmail.getRetrievedDocuments()[0], UtenteEmailEToken.class);
-                DatabaseResponse rispostaOrdini = comunicazioneDatabase.ExecuteQuery(QueryBuilder.V1().FIND().setCollection("orders").filter(new Filter().add("email", emailEToken.getUserEmail())));
+                HTTPToken emailEToken = jsonb.fromJson(rispostaEmail.getRetrievedDocuments()[0], HTTPToken.class);
+                DatabaseResponse rispostaOrdini = comunicazioneDatabase.ExecuteQuery(QueryBuilder.V1().FIND().setCollection("orders").filter(new Filter().add("utenteEmail", emailEToken.getEmail())));
                 if(!rispostaOrdini.isErrorResponse()){
                     // nessun errore
                     Ordine[] ordini = new Ordine[rispostaOrdini.getRetrievedDocuments().length];
